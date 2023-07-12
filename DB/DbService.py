@@ -4,7 +4,7 @@ from LOGS.LogsManager import Log
 import influxdb_client
 import os
 from influxdb_client.client.write_api import SYNCHRONOUS
-import datetime
+from datetime import datetime
 
 class DbService:
     def __init__(self):
@@ -34,77 +34,34 @@ class DbService:
         final_output = []
         try:
             query = '''
-                        import "join"
-                        left = from(bucket: \"''' + self.bucket + '''\")
+                        from(bucket: \"''' + self.bucket + '''\")
                                 |> range(start: 0)
                                 |> filter(fn: (r) => r["_measurement"] == "ConfigData")
                                 |> filter(fn: (r) => r["Tag1"] == "Asset")
                                 |> filter(fn: (r) => r["Table"] == "AssetConfig")
                                 |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
-                                |> keep(columns: ["asset_name", "asset_id","shop_id"])   
-
-                        right = from(bucket: \"''' + self.bucket + '''\")
-                                |> range(start: 0)
-                                |> filter(fn: (r) => r["_measurement"] == "ConfigData")
-                                |> filter(fn: (r) => r["Tag1"] == "Shop")
-                                |> filter(fn: (r) => r["Table"] == "ShopConfig")
-                                |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
-                                |> keep(columns: ["shop_name", "shop_id","factory_id"])  
-
-                         a= join.inner(
-                               left: left ,
-                               right: right,
-                               on: (l, r) => l.shop_id == r.shop_id,
-                               as: (l, r) => ({l with shop_id: r.shop_id ,shop_name: r.shop_name, factory_id: r.factory_id}),
-                           ) 
-
-                        left1 = from(bucket: \"''' + self.bucket + '''\")
-                                |> range(start: 0)
-                                |> filter(fn: (r) => r["_measurement"] == "ConfigData")
-                                |> filter(fn: (r) => r["Tag1"] == "Factory")
-                                |> filter(fn: (r) => r["Table"] == "FactoryConfig")
-                                |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
-                                |> keep(columns: ["factory_name", "factory_id","org_id"])   
-
-                        right2 = from(bucket: \"''' + self.bucket + '''\")
-                                |> range(start: 0)
-                                |> filter(fn: (r) => r["_measurement"] == "ConfigData")
-                                |> filter(fn: (r) => r["Tag1"] == "Org")
-                                |> filter(fn: (r) => r["Table"] == "OrgConfig")
-                                |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
-                                |> keep(columns: ["org_name", "org_id"])  
-
-                          b=join.inner(
-                               left: left1 ,
-                               right: right2,
-                               on: (l, r) => l.org_id == r.org_id,
-                               as: (l, r) => ({l with org_id: r.org_id , org_name : r.org_name}),
-                           )
-
-                        join.inner(
-                               left: a ,
-                               right: b,
-                               on: (l, r) => l.factory_id == r.factory_id,
-                               as: (l, r) => ({l with factory_id: r.factory_id , org_id : r.org_id, factory_name: r.factory_name, org_name : r.org_name}),
-                        )
                     '''
             print("\n Querying for get_assetconfig\n")
             # print(str(query))
             data_stream = self.query_api.query_data_frame(query)
             if len(data_stream) > 0:
                 data_stream = data_stream.round(2)
-                data_stream.drop(columns=['result', 'table'], inplace=True)
+                data_stream.drop(columns=['Tag1', 'Table'], inplace=True)
                 # convert DataFrame to list of dictionaries
                 for index, row in data_stream.iterrows():
-                    datetime_object = datetime.strptime(row["read_timestamp"], self.utc_format_str)
+                    datetime_object = row["_time"]
+                    # datetime_object = datetime.strptime(row["_time"], self.utc_format_str)
+                    str(datetime_object)
                     local_time = str(datetime_object.replace(tzinfo=pytz.utc).astimezone(self.local_tz))
-                    datetime_object = datetime.strptime(local_time, self.local_format_str)
+                    datetime_object = row["_time"]
+                    # datetime_object = datetime.strptime(row["_time"], self.utc_format_str)
+                    str(datetime_object)
                     row_dict = row.to_dict()
                     # row_dict["read_timestamp"] = local_time
                     row_dict["year"] = str(datetime_object.strftime("%Y"))
                     row_dict["month"] = str(datetime_object.strftime("%b"))
                     row_dict["date"] = str(datetime_object.strftime("%d"))
-                    for e in ['read_timestamp']:
+                    for e in ['_time']:
                         row_dict.pop(e, 'no key found')
                     final_output.append(row_dict)
             return final_output
