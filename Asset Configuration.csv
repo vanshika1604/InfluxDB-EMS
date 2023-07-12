@@ -1,0 +1,43 @@
+,,,,,,Asset Configuration,,,,,,
+#group,FALSE,FALSE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,FALSE,FALSE,FALSE,
+#datatype,string,long,dateTime:RFC3339,dateTime:RFC3339,dateTime:RFC3339,string,string,string,string,string,long,
+#default,_result,,,,,,,,,,,
+,result,table,_start,_stop,_time,Table,Tag1,_measurement,assetattribute_id,attribute_name,synced,
+,,0,1970-01-01T00:00:00Z,2023-07-12T11:18:14.127355047Z,2023-04-25T00:30:09Z,AssetConfig,Asset,ConfigData,0f0ec863-7785-4fe4-a433-e5b685be8bc3,shift,1,
+,,0,1970-01-01T00:00:00Z,2023-07-12T11:18:14.127355047Z,2023-04-25T00:30:10Z,AssetConfig,Asset,ConfigData,94b726d2-ec35-41e9-91a8-1226e317642d,operator,1,
+,,0,1970-01-01T00:00:00Z,2023-07-12T11:18:14.127355047Z,2023-04-25T00:30:11Z,AssetConfig,Asset,ConfigData,2439bf89-4f0b-4dc5-bbe1-6ef7290240cf,production_kg,1,
+,,0,1970-01-01T00:00:00Z,2023-07-12T11:18:14.127355047Z,2023-04-25T00:30:12Z,AssetConfig,Asset,ConfigData,175fac4e-232d-4ae6-b277-7d122a6f4056,emulsion_brix,1,
+,,0,1970-01-01T00:00:00Z,2023-07-12T11:18:14.127355047Z,2023-04-25T00:30:13Z,AssetConfig,Asset,ConfigData,80f6a59b-c1b5-41bb-8c40-403dab92c5b8,sum_of_runtime,1,
+,,0,1970-01-01T00:00:00Z,2023-07-12T11:18:14.127355047Z,2023-04-25T00:30:14Z,AssetConfig,Asset,ConfigData,d7a3fb8d-bc64-43f3-9ca3-a78ad8000d0c,sum_of_slowspeed,1,
+,,0,1970-01-01T00:00:00Z,2023-07-12T11:18:14.127355047Z,2023-04-25T00:30:15Z,AssetConfig,Asset,ConfigData,7f389438-1322-442c-8e9b-99d70bf9cb04,sum_of_downtime,1,
+,,0,1970-01-01T00:00:00Z,2023-07-12T11:18:14.127355047Z,2023-04-25T00:30:16Z,AssetConfig,Asset,ConfigData,7b3398c0-bbff-41e8-8601-9186e326cb73,motor_cooling_fan_rpm,1,
+,,0,1970-01-01T00:00:00Z,2023-07-12T11:18:14.127355047Z,2023-04-25T00:30:17Z,AssetConfig,Asset,ConfigData,6bdcfb85-0170-4ff5-b315-1120fd5bb963,speed_m_s,1,
+,,0,1970-01-01T00:00:00Z,2023-07-12T11:18:14.127355047Z,2023-04-25T00:30:18Z,AssetConfig,Asset,ConfigData,4325dce2-57e0-48af-8ca9-10658b48ae12,dancer_pressure,1,
+,,0,1970-01-01T00:00:00Z,2023-07-12T11:18:14.127355047Z,2023-04-25T00:30:19Z,AssetConfig,Asset,ConfigData,4e914241-af7a-456a-975a-ba24a23d55d7,wd_kwh,1,
+,,,,,,,,,,,,
+,,,,,,,,,,,,
+,,,,,,Shop Configuration,,,,,,
+,,,,,,,,,,,,
+#group,FALSE,FALSE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,FALSE,FALSE,FALSE,FALSE
+#datatype,string,long,dateTime:RFC3339,dateTime:RFC3339,dateTime:RFC3339,string,string,string,string,string,string,long
+#default,_result,,,,,,,,,,,
+,result,table,_start,_stop,_time,Table,Tag1,_measurement,factory_id,shop_id,shop_name,synced
+,,0,1970-01-01T00:00:00Z,2023-07-12T11:18:50.551837476Z,2023-04-25T00:30:06Z,ShopConfig,Shop,ConfigData,c4b03eef-4f7b-4be9-8795-e996ddb73767,a56253b0-e7d0-4a0a-a777-0231bdb5152b,Wet Draw,1
+,,,,,,,,,,,,
+,,,,,,,,,,,,
+,,,,,,Factory Configuration,,,,,,
+,,,,,,,,,,,,
+#group,FALSE,FALSE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,FALSE,FALSE,FALSE,FALSE
+#datatype,string,long,dateTime:RFC3339,dateTime:RFC3339,dateTime:RFC3339,string,string,string,string,string,string,long
+#default,_result,,,,,,,,,,,
+,result,table,_start,_stop,_time,Table,Tag1,_measurement,factory_id,factory_name,org_id,synced
+,,0,1970-01-01T00:00:00Z,2023-07-12T11:19:30.282610085Z,2023-04-25T00:30:07Z,FactoryConfig,Factory,ConfigData,c4b03eef-4f7b-4be9-8795-e996ddb73767,Chakan,729405f2-7bb4-4728-85d4-149fcc688f2c,1
+,,,,,,,,,,,,
+,,,,,,,,,,,,
+,,,,,,Org Configuration,,,,,,
+,,,,,,,,,,,,
+#group,FALSE,FALSE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,FALSE,FALSE,FALSE,
+#datatype,string,long,dateTime:RFC3339,dateTime:RFC3339,dateTime:RFC3339,string,string,string,string,string,long,
+#default,_result,,,,,,,,,,,
+,result,table,_start,_stop,_time,Table,Tag1,_measurement,org_id,org_name,synced,
+,,0,1970-01-01T00:00:00Z,2023-07-12T11:19:53.162070558Z,2023-04-25T00:30:08Z,OrgConfig,Org,ConfigData,729405f2-7bb4-4728-85d4-149fcc688f2c,Indorama,1,

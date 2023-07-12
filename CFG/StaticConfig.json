@@ -1,0 +1,18 @@
+{
+    "Influx": {
+        "Influx_db_API_token": "UqQtvdiW2SDRUEGwFqKzcxsO8XgdpnZa6WfEio3NOBoTMIXasaqS-U65MrbTb-zWcy14jDr_HG71cMfLvpsznw==",
+        "Influx_org": "ems",
+        "Influx_bucket": "59830e07-71a6-4ff0-9531-1f9fc4813fe0",
+        "Influx_url": "http://localhost:8086",
+        "batch_size": "10",
+        "range": "-30d"
+    },
+    "Log": {
+        "log_level": "20",
+        "log_dir": "/Logs/EmsAdminApi/"
+    },
+    "Redis": {
+        "redis_host": "10.1.45.74",
+        "redis_port": "localhost"
+    }
+}
