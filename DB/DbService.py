@@ -399,24 +399,27 @@ class DbService:
             data_frame.drop(['result', 'table'], axis=1, inplace=True)
             df = pd.DataFrame(data_frame)
             # df = pd.read_excel(r"C:\Users\Dell\Downloads\HistoryDataMigration\HistoryDataMigration\FILES\db.xlsx",sheet_name="Sheet1")
-
+            with open(self.filename, "r") as jsonfile:
+                configdata = json.load(jsonfile)
             for index, row in df.iterrows():
                 temp = row.to_dict()
                 # print("Index" + str(index))
-                db_data = temp.copy()
+                # db_data = temp.copy()
                 point = influxdb_client.Point("ConfigData")
-                point.tag("Table", "AssetConfig")
-                point.tag("Tag1", "Asset")
+                point.field("asset_name", "")
+                point.field("shop_name", "")
+                point.field("factory_name", "")
+                point.field("org_name", "")
                 # point.time(db_data["_time"])
-                for each in db_data:
-                    point.field(each, db_data[each])
+                # for each in db_data:
+                #     point.field(each, db_data[each])
                 # point.field("synced", int(0))
                 #print(str(point))
                 self.points.append(point)
             print("Writing point to DB")
             self.write_api.write(bucket=self.bucket, org=self.org, record=self.points)
             print("completed") 
-            df_list = df.to_dict('records')
+            df_list = df.to_dict('record')
             json_string = json.dumps(df_list)
             # print(data_frame.head())
             return json_string
