@@ -12,7 +12,7 @@
         "log_dir": "/Logs/EmsAdminApi/"
     },
     "Redis": {
-        "redis_host": "10.1.45.74",
-        "redis_port": "localhost"
+        "redis_host": "localhost",
+        "redis_port": "6379"
     }
 }
