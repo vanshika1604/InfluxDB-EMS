@@ -29,20 +29,12 @@ configdata = config_handler.config_read()
 @app.route('/emsadminapi/v1/get_assetconfig', methods=['GET'])
 def get_assetconfig():
     try:
-        if 'range' in request.args:
-            timerange = request.args.get("range")
-        else:
-            timerange = "-7d"
-        if 'asset' in request.args:
-            asset = request.args.get("asset")
-        else:
-            asset = ""
         # cache_key = f"get_assetconfig:{timerange}:{asset}"
         # cached_data = cache.get(cache_key)
         # print(cache_key)
         # if cached_data:
         #     return jsonify(json.loads(cached_data)), 200
-        output = dbService.get_assetconfig(timerange, asset)
+        output = dbService.get_assetconfig()
         # cache.set(cache_key, json.dumps(output), ex=900)
         print("Response /emsadminapi/v1/get_assetconfig ")
         LOG.INFO("Response /emsadminapi/v1/get_assetconfig ")
@@ -56,20 +48,12 @@ def get_assetconfig():
 @app.route('/emsadminapi/v1/get_assetattributes', methods=['GET'])
 def get_assetattributes():
     try:
-        if 'range' in request.args:
-            timerange = request.args.get("range")
-        else:
-            timerange = "-7d"
-        if 'asset' in request.args:
-            asset = request.args.get("asset")
-        else:
-            asset = ""
         # cache_key = f"get_assetattributes:{timerange}:{asset}"
         # cached_data = cache.get(cache_key)
         # print(cache_key)
         # if cached_data:
         #     return jsonify(json.loads(cached_data)), 200
-        output = dbService.get_assetattributes(timerange, asset)
+        output = dbService.get_assetattributes()
         # cache.set(cache_key, json.dumps(output), ex=900)
         print("Response /emsadminapi/v1/get_assetattributes ")
         LOG.INFO("Response /emsadminapi/v1/get_assetattributes ")
@@ -82,20 +66,12 @@ def get_assetattributes():
 @app.route('/emsadminapi/v1/get_shopattributes', methods=['GET'])
 def get_shopattributes():
     try:
-        if 'range' in request.args:
-            timerange = request.args.get("range")
-        else:
-            timerange = "-7d"
-        if 'asset' in request.args:
-            asset = request.args.get("asset")
-        else:
-            asset = ""
         # cache_key = f"get_shopattributes:{timerange}:{asset}"
         # cached_data = cache.get(cache_key)
         # print(cache_key)
         # if cached_data:
         #     return jsonify(json.loads(cached_data)), 200
-        output = dbService.get_shopattributes(timerange, asset)
+        output = dbService.get_shopattributes()
         # cache.set(cache_key, json.dumps(output), ex=900)
         print("Response /emsadminapi/v1/get_shopattributes ")
         LOG.INFO("Response /emsadminapi/v1/get_shopattributes ")
@@ -108,20 +84,12 @@ def get_shopattributes():
 @app.route('/emsadminapi/v1/get_assetfaultruleconfig', methods=['GET'])
 def get_assetfaultruleconfig():
     try:
-        if 'range' in request.args:
-            timerange = request.args.get("range")
-        else:
-            timerange = "-7d"
-        if 'asset' in request.args:
-            asset = request.args.get("asset")
-        else:
-            asset = ""
         # cache_key = f"get_assetfaultruleconfig:{timerange}:{asset}"
         # cached_data = cache.get(cache_key)
         # print(cache_key)
         # if cached_data:
         #     return jsonify(json.loads(cached_data)), 200
-        output = dbService.get_assetfaultruleconfig(timerange, asset)
+        output = dbService.get_assetfaultruleconfig()
         # cache.set(cache_key, json.dumps(output), ex=900)
         print("Response /emsadminapi/v1/get_assetfaultruleconfig ")
         LOG.INFO("Response /emsadminapi/v1/get_assetfaultruleconfig ")
@@ -130,32 +98,113 @@ def get_assetfaultruleconfig():
         print("Exception /emsadminapi/v1/get_assetfaultruleconfig: " + str(ex))
         LOG.ERROR("Exception /emsadminapi/v1/get_assetfaultruleconfig " + str(ex))
         return ex
-if __name__ == '__main__':
-    serve(app, host="localhost", port=3005)
 
-@app.route('/emsadminapi/v1/post_assetconfig', methods=['GET'])
+@app.route('/emsadminapi/v1/post_assetconfig', methods=['POST'])
 def post_assetconfig():
     try:
-        if 'range' in request.args:
-            timerange = request.args.get("range")
-        else:
-            timerange = "-7d"
-        if 'asset' in request.args:
-            asset = request.args.get("asset")
-        else:
-            asset = ""
+        dict_data = request.get_json()
+        temp = json.dumps(dict_data)
+        data = json.loads(temp)
         # cache_key = f"post_assetconfig:{timerange}:{asset}"
         # cached_data = cache.get(cache_key)
         # print(cache_key)
         # if cached_data:
         #     return jsonify(json.loads(cached_data)), 200
        
-        output = dbService.post_assetconfig(timerange, asset)
+        output = dbService.post_assetconfig(data)
         # cache.set(cache_key, json.dumps(output), ex=900)
         print("Response /emsadminapi/v1/post_assetconfig ")
         LOG.INFO("Response /emsadminapi/v1/post_assetconfig ")
-        return jsonify(output), 200
+        return output, 200
     except Exception as ex:
         print("Exception /emsadminapi/v1/post_assetconfig" + str(ex))
         LOG.ERROR("Exception /emsadminapi/v1/post_assetconfig: " + str(ex))
         return ex
+
+@app.route('/emsadminapi/v1/post_assetattributes', methods=['POST'])
+def post_assetattributes():
+    try:
+        dict_data = request.get_json()
+        temp = json.dumps(dict_data)
+        data = json.loads(temp)
+        # cache_key = f"post_assetattributes:{timerange}:{asset}"
+        # cached_data = cache.get(cache_key)
+        # print(cache_key)
+        # if cached_data:
+        #     return jsonify(json.loads(cached_data)), 200
+       
+        output = dbService.post_assetattributes(data)
+        # cache.set(cache_key, json.dumps(output), ex=900)
+        print("Response /emsadminapi/v1/post_assetattributes ")
+        LOG.INFO("Response /emsadminapi/v1/post_assetattributes ")
+        return output, 200
+    except Exception as ex:
+        print("Exception /emsadminapi/v1/post_assetattributes" + str(ex))
+        LOG.ERROR("Exception /emsadminapi/v1/post_assetattributes: " + str(ex))
+        return ex
+
+@app.route('/emsadminapi/v1/post_shopattributes', methods=['POST'])
+def post_shopattributes():
+    try:
+        dict_data = request.get_json()
+        temp = json.dumps(dict_data)
+        data = json.loads(temp)
+        # cache_key = f"post_shopattributes:{timerange}:{asset}"
+        # cached_data = cache.get(cache_key)
+        # print(cache_key)
+        # if cached_data:
+        #     return jsonify(json.loads(cached_data)), 200
+       
+        output = dbService.post_shopattributes(data)
+        # cache.set(cache_key, json.dumps(output), ex=900)
+        print("Response /emsadminapi/v1/post_shopattributes ")
+        LOG.INFO("Response /emsadminapi/v1/post_shopattributes ")
+        return output, 200
+    except Exception as ex:
+        print("Exception /emsadminapi/v1/post_shopattributes" + str(ex))
+        LOG.ERROR("Exception /emsadminapi/v1/post_shopattributes: " + str(ex))
+        return ex 
+
+@app.route('/emsadminapi/v1/post_assetfaultruleconfig', methods=['POST'])
+def post_assetfaultruleconfig():
+    try:
+        dict_data = request.get_json()
+        temp = json.dumps(dict_data)
+        data = json.loads(temp)
+        # cache_key = f"post_assetfaultruleconfig:{timerange}:{asset}"
+        # cached_data = cache.get(cache_key)
+        # print(cache_key)
+        # if cached_data:
+        #     return jsonify(json.loads(cached_data)), 200
+       
+        output = dbService.post_assetfaultruleconfig(data)
+        # cache.set(cache_key, json.dumps(output), ex=900)
+        print("Response /emsadminapi/v1/post_assetfaultruleconfig ")
+        LOG.INFO("Response /emsadminapi/v1/post_assetfaultruleconfig ")
+        return output, 200
+    except Exception as ex:
+        print("Exception /emsadminapi/v1/post_assetfaultruleconfig" + str(ex))
+        LOG.ERROR("Exception /emsadminapi/v1/post_assetfaultruleconfig: " + str(ex))
+        return ex
+
+@app.route('/emsadminapi/v1/put_assetattributes', methods=['PUT'])
+def put_assetattributes():
+    try:
+        # cache_key = f"get_assetattributes:{timerange}:{asset}"
+        # cached_data = cache.get(cache_key)
+        # print(cache_key)
+        # if cached_data:
+        #     return jsonify(json.loads(cached_data)), 200
+        output = dbService.put_assetattributes()
+        # cache.set(cache_key, json.dumps(output), ex=900)
+        print("Response /emsadminapi/v1/put_assetattributes")
+        LOG.INFO("Response /emsadminapi/v1/put_assetattributes ")
+        return jsonify(output), 200
+    except Exception as ex:
+        print("Exception /emsadminapi/v1/put_assetattributes" + str(ex))
+        LOG.ERROR("Exception /emsadminapi/v1/put_assetattributes: " + str(ex))
+        return ex
+    
+if __name__ == '__main__':
+    serve(app, host="localhost", port=3005)
+

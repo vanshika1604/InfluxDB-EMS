@@ -4,6 +4,7 @@ import pytz
 from CFG.ConfigHandler import ConfigHandler
 from LOGS.LogsManager import Log
 import influxdb_client
+from influxdb_client import Point
 import os
 from influxdb_client.client.write_api import SYNCHRONOUS
 from datetime import datetime
@@ -73,7 +74,7 @@ class DbService:
     #         print("\nAsset Config Data Read Operation in Influxdb Failed " + str(os.path.basename(__file__)) + str(ex))
     #         return final_output
 
-    def get_assetconfig(self, timerange, asset):
+    def get_assetconfig(self):
         try:
             # print("\nReading asset and shop config details from influx" + str(os.path.basename(__file__)))
             # self.LOG.INFO("\nReading asset and shop config details from influx" + str(os.path.basename(__file__)))
@@ -81,17 +82,13 @@ class DbService:
                         import "join"
                         left = from(bucket: \"''' + self.bucket + '''\")
                                 |> range(start: 0)
-                                |> filter(fn: (r) => r["_measurement"] == "ConfigData")
-                                |> filter(fn: (r) => r["Tag1"] == "Asset")
-                                |> filter(fn: (r) => r["Table"] == "AssetConfig")
+                                |> filter(fn: (r) => r["_measurement"] == "ConfigData" and r["Tag1"] == "Asset" and r["Table"] == "AssetConfig")
                                 |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
                                 |> keep(columns: ["asset_name", "asset_id","shop_id"])   
 
                         right = from(bucket: \"''' + self.bucket + '''\")
                                 |> range(start: 0)
-                                |> filter(fn: (r) => r["_measurement"] == "ConfigData")
-                                |> filter(fn: (r) => r["Tag1"] == "Shop")
-                                |> filter(fn: (r) => r["Table"] == "ShopConfig")
+                                |> filter(fn: (r) => r["_measurement"] == "ConfigData" and r["Tag1"] == "Shop" and r["Table"] == "ShopConfig")
                                 |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
                                 |> keep(columns: ["shop_name", "shop_id","factory_id"])  
 
@@ -104,17 +101,13 @@ class DbService:
 
                         left1 = from(bucket: \"''' + self.bucket + '''\")
                                 |> range(start: 0)
-                                |> filter(fn: (r) => r["_measurement"] == "ConfigData")
-                                |> filter(fn: (r) => r["Tag1"] == "Factory")
-                                |> filter(fn: (r) => r["Table"] == "FactoryConfig")
+                                |> filter(fn: (r) => r["_measurement"] == "ConfigData" and r["Tag1"] == "Factory" and r["Table"] == "FactoryConfig")
                                 |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
                                 |> keep(columns: ["factory_name", "factory_id","org_id"])   
 
                         right2 = from(bucket: \"''' + self.bucket + '''\")
                                 |> range(start: 0)
-                                |> filter(fn: (r) => r["_measurement"] == "ConfigData")
-                                |> filter(fn: (r) => r["Tag1"] == "Org")
-                                |> filter(fn: (r) => r["Table"] == "OrgConfig")
+                                |> filter(fn: (r) => r["_measurement"] == "ConfigData" and r["Tag1"] == "Org" and r["Table"] == "OrgConfig")
                                 |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
                                 |> keep(columns: ["org_name", "org_id"])  
 
@@ -147,7 +140,7 @@ class DbService:
                 "\nFailed to read asset config details from influx" + str(os.path.basename(__file__)) + str(ex))
             pass
 
-    def get_assetattributes(self, timerange, asset):
+    def get_assetattributes(self):
         try:
             # print("\nReading asset and shop config details from influx" + str(os.path.basename(__file__)))
             # self.LOG.INFO("\nReading asset and shop config details from influx" + str(os.path.basename(__file__)))
@@ -156,17 +149,13 @@ class DbService:
 
                          l = from(bucket: \"''' + self.bucket + '''\")
                           |> range(start: 0)
-                          |> filter(fn: (r) => r["_measurement"] == "ConfigData")
-                          |> filter(fn: (r) => r["Tag1"] == "Asset")
-                          |> filter(fn: (r) => r["Table"] == "AssetConfig")
+                          |> filter(fn: (r) => r["_measurement"] == "ConfigData" and r["Tag1"] == "Asset" and r["Table"] == "AssetConfig")
                           |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
                           |> keep(columns: ["asset_name", "asset_id"])
   
                          r = from(bucket: \"''' + self.bucket + '''\")
                           |> range(start: 0)
-                          |> filter(fn: (r) => r["_measurement"] == "ConfigData")
-                          |> filter(fn: (r) => r["Tag1"] == "Asset")
-                          |> filter(fn: (r) => r["Table"] == "AssetAttributeMapping")
+                          |> filter(fn: (r) => r["_measurement"] == "ConfigData" and r["Tag1"] == "Asset" and r["Table"] == "AssetAttributeMapping")
                           |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
                           |> keep(columns: ["assetattribute_id", "asset_id"])   
 
@@ -179,9 +168,7 @@ class DbService:
 
                          b = from(bucket: \"''' + self.bucket + '''\")
                            |> range(start: 0)
-                           |> filter(fn: (r) => r["_measurement"] == "ConfigData")
-                           |> filter(fn: (r) => r["Tag1"] == "Asset")
-                           |> filter(fn: (r) => r["Table"] == "AssetAttributes")               
+                           |> filter(fn: (r) => r["_measurement"] == "ConfigData" and r["Tag1"] == "Asset" and r["Table"] == "AssetAttributes")               
                            |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
                            |> keep(columns: ["assetattribute_id","attribute_name"]) 
                          
@@ -207,7 +194,7 @@ class DbService:
                 "\nFailed to read asset attributes details from influx" + str(os.path.basename(__file__)) + str(ex))
             pass
         
-    def get_shopattributes(self, timerange, asset):
+    def get_shopattributes(self):
         try:
             # print("\nReading asset and shop config details from influx" + str(os.path.basename(__file__)))
             # self.LOG.INFO("\nReading asset and shop config details from influx" + str(os.path.basename(__file__)))
@@ -216,17 +203,13 @@ class DbService:
 
                          l = from(bucket: \"''' + self.bucket + '''\")
                           |> range(start: 0)
-                          |> filter(fn: (r) => r["_measurement"] == "ConfigData")
-                          |> filter(fn: (r) => r["Tag1"] == "Shop")
-                          |> filter(fn: (r) => r["Table"] == "ShopConfig")
+                          |> filter(fn: (r) => r["_measurement"] == "ConfigData" and r["Tag1"] == "Shop" and r["Table"] == "ShopConfig")
                           |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
                           |> keep(columns: ["shop_name", "shop_id"])
   
                          r = from(bucket: \"''' + self.bucket + '''\")
                           |> range(start: 0)
-                          |> filter(fn: (r) => r["_measurement"] == "ConfigData")
-                          |> filter(fn: (r) => r["Tag1"] == "Shop")
-                          |> filter(fn: (r) => r["Table"] == "ShopAttributeMapping")
+                          |> filter(fn: (r) => r["_measurement"] == "ConfigData" and r["Tag1"] == "Shop" and r["Table"] == "ShopAttributeMapping")
                           |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
                           |> keep(columns: ["shopattribute_id", "shop_id"])   
 
@@ -240,9 +223,7 @@ class DbService:
 
                          b = from(bucket: \"''' + self.bucket + '''\")
                            |> range(start: 0)
-                           |> filter(fn: (r) => r["_measurement"] == "ConfigData")
-                           |> filter(fn: (r) => r["Tag1"] == "Shop")
-                           |> filter(fn: (r) => r["Table"] == "ShopAttributes")               
+                           |> filter(fn: (r) => r["_measurement"] == "ConfigData" and r["Tag1"] == "Shop" and r["Table"] == "ShopAttributes")                  
                            |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
                            |> keep(columns: ["shopattribute_id","attribute_name"]) 
                          
@@ -271,7 +252,7 @@ class DbService:
             pass
         
 
-    def get_assetfaultruleconfig(self, timerange, asset):
+    def get_assetfaultruleconfig(self):
         try:
             # print("\nReading asset and shop config details from influx" + str(os.path.basename(__file__)))
             # self.LOG.INFO("\nReading asset and shop config details from influx" + str(os.path.basename(__file__)))
@@ -280,17 +261,13 @@ class DbService:
 
                          l = from(bucket: "59830e07-71a6-4ff0-9531-1f9fc4813fe0")
                           |> range(start: 0)
-                          |> filter(fn: (r) => r["_measurement"] == "ConfigData")
-                          |> filter(fn: (r) => r["Tag1"] == "Asset")
-                          |> filter(fn: (r) => r["Table"] == "AssetConfig")
+                          |> filter(fn: (r) => r["_measurement"] == "ConfigData" and r["Tag1"] == "Asset" and r["Table"] == "AssetConfig")
                           |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
                           |> keep(columns: ["asset_name", "asset_id"])
   
                          r = from(bucket: "59830e07-71a6-4ff0-9531-1f9fc4813fe0")
                           |> range(start: 0)
-                          |> filter(fn: (r) => r["_measurement"] == "ConfigData")
-                          |> filter(fn: (r) => r["Tag1"] == "Asset")
-                          |> filter(fn: (r) => r["Table"] == "AssetRuleMapping")
+                          |> filter(fn: (r) => r["_measurement"] == "ConfigData" and r["Tag1"] == "Asset" and r["Table"] == "AssetRuleMapping")
                           |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
                           |> keep(columns: ["asset_id", "rule_id"])   
 
@@ -304,9 +281,7 @@ class DbService:
 
                          b = from(bucket: "59830e07-71a6-4ff0-9531-1f9fc4813fe0")
                            |> range(start: 0)
-                           |> filter(fn: (r) => r["_measurement"] == "ConfigData")
-                           |> filter(fn: (r) => r["Tag1"] == "Asset")
-                           |> filter(fn: (r) => r["Table"] == "AssetAlertRules")               
+                           |> filter(fn: (r) => r["_measurement"] == "ConfigData" and r["Tag1"] == "Asset" and r["Table"] == "AssetAlertRules")              
                            |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
                            |> keep(columns: ["condition","alert","action","rule_id"]) 
                          
@@ -334,98 +309,223 @@ class DbService:
                 "\nFailed to read asset fault rule config details from influx" + str(os.path.basename(__file__)) + str(ex))
             pass
 
-    def put_assetconfig(self, timerange, asset):
+    def post_assetconfig(self, data):
         try:
-            # print("\nReading asset and shop config details from influx" + str(os.path.basename(__file__)))
-            # self.LOG.INFO("\nReading asset and shop config details from influx" + str(os.path.basename(__file__)))
-            query = '''
-                        import "join"
-                        left = from(bucket: \"''' + self.bucket + '''\")
-                                |> range(start: 0)
-                                |> filter(fn: (r) => r["_measurement"] == "ConfigData")
-                                |> filter(fn: (r) => r["Tag1"] == "Asset")
-                                |> filter(fn: (r) => r["Table"] == "AssetConfig")
-                                |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
-                                |> keep(columns: ["asset_name", "asset_id","shop_id"])   
+            # def serialize_point_to_json(point):
+            #     json_point = {
+            #         "tag": point.tag,
+            #         "field": point.field
+            #      }
+            #     return json.dumps(json_point)
 
-                        right = from(bucket: \"''' + self.bucket + '''\")
-                                |> range(start: 0)
-                                |> filter(fn: (r) => r["_measurement"] == "ConfigData")
-                                |> filter(fn: (r) => r["Tag1"] == "Shop")
-                                |> filter(fn: (r) => r["Table"] == "ShopConfig")
-                                |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
-                                |> keep(columns: ["shop_name", "shop_id","factory_id"])  
+            self.points = []
+            points = self.points
+            asset_name = data["asset_name"]
+            shop_name = data["shop_name"]
+            factory_name = data["factory_name"]
+            org_name = data["org_name"]
 
-                         a= join.inner(
-                               left: left ,
-                               right: right,
-                               on: (l, r) => l.shop_id == r.shop_id,
-                               as: (l, r) => ({l with shop_id: r.shop_id ,shop_name: r.shop_name, factory_id: r.factory_id}),
-                           ) 
+            #Writing the asset name from AssetConfig
+            point = Point("ConfigData")
+            point.tag("Table", "AssetConfig")
+            point.tag("Tag1", "Asset")
+            point.field("asset_name", asset_name)
+            print(point)
+            # json_point = serialize_point_to_json(point)
+            # print(json_point)
+            points.append(point)
+            self.write_api.write(bucket=self.bucket, org=self.org, record= point)
 
-                        left1 = from(bucket: \"''' + self.bucket + '''\")
-                                |> range(start: 0)
-                                |> filter(fn: (r) => r["_measurement"] == "ConfigData")
-                                |> filter(fn: (r) => r["Tag1"] == "Factory")
-                                |> filter(fn: (r) => r["Table"] == "FactoryConfig")
-                                |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
-                                |> keep(columns: ["factory_name", "factory_id","org_id"])   
+            #Writing the shop name from ShopConfig
+            point = Point("ConfigData")
+            point.tag("Table", "ShopConfig")
+            point.tag("Tag1", "Shop")
+            point.field("shop_name", shop_name)
+            print(point)
+            points.append(point)
+            self.write_api.write(bucket=self.bucket, org=self.org, record= point)
 
-                        right2 = from(bucket: \"''' + self.bucket + '''\")
-                                |> range(start: 0)
-                                |> filter(fn: (r) => r["_measurement"] == "ConfigData")
-                                |> filter(fn: (r) => r["Tag1"] == "Org")
-                                |> filter(fn: (r) => r["Table"] == "OrgConfig")
-                                |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
-                                |> keep(columns: ["org_name", "org_id"])  
+            #Writing the factory name from FactoryConfig
+            point = Point("ConfigData")
+            point.tag("Table", "FactoryConfig")
+            point.tag("Tag1", "Factory")
+            point.field("factory_name", factory_name)
+            print(point)
+            points.append(point)
+            self.write_api.write(bucket=self.bucket, org=self.org, record= point)
 
-                          b=join.inner(
-                               left: left1 ,
-                               right: right2,
-                               on: (l, r) => l.org_id == r.org_id,
-                               as: (l, r) => ({l with org_id: r.org_id , org_name : r.org_name}),
-                           )
-
-                        join.inner(
-                               left: a ,
-                               right: b,
-                               on: (l, r) => l.factory_id == r.factory_id,
-                               as: (l, r) => ({l with factory_id: r.factory_id , org_id : r.org_id, factory_name: r.factory_name, org_name : r.org_name}),
-                        )
-                    '''
-            # print("\n Querying for getConfigData\n")
-            # print(str(query))
-            data_frame = self.query_api.query_data_frame(query)
-            data_frame.drop(['result', 'table'], axis=1, inplace=True)
-            df = pd.DataFrame(data_frame)
-            # df = pd.read_excel(r"C:\Users\Dell\Downloads\HistoryDataMigration\HistoryDataMigration\FILES\db.xlsx",sheet_name="Sheet1")
-            with open(self.filename, "r") as jsonfile:
-                configdata = json.load(jsonfile)
-            for index, row in df.iterrows():
-                temp = row.to_dict()
-                # print("Index" + str(index))
-                # db_data = temp.copy()
-                point = influxdb_client.Point("ConfigData")
-                point.field("asset_name", "")
-                point.field("shop_name", "")
-                point.field("factory_name", "")
-                point.field("org_name", "")
-                # point.time(db_data["_time"])
-                # for each in db_data:
-                #     point.field(each, db_data[each])
-                # point.field("synced", int(0))
-                #print(str(point))
-                self.points.append(point)
-            print("Writing point to DB")
-            self.write_api.write(bucket=self.bucket, org=self.org, record=self.points)
-            print("completed") 
-            df_list = df.to_dict('record')
-            json_string = json.dumps(df_list)
-            # print(data_frame.head())
-            return json_string
+            #Writing the org name from OrgConfig
+            point = Point("ConfigData")
+            point.tag("Table", "OrgConfig")
+            point.tag("Tag1", "Org")
+            point.field("org_name", org_name)
+            print(point)
+            points.append(point)
+            self.write_api.write(bucket=self.bucket, org=self.org, record= point)
+            print(points)
+            return points
         except Exception as ex:
-            print("\nFailed to write asset config details from influx" + str(os.path.basename(__file__)) + str(ex))
+            print("\nFailed to write asset config details from influx: " + str(os.path.basename(__file__)) + str(ex))
             self.LOG.ERROR(
-                "\nFailed to write asset config details from influx" + str(os.path.basename(__file__)) + str(ex))
+                "\nFailed to write asset config details from influx: " + str(os.path.basename(__file__)) + str(ex))
             pass
 
+
+    def post_assetattributes(self, data):
+        try:
+            self.points = []
+            asset_name = data["asset_name"]
+            attribute_name = data["attribute_name"]
+
+            #Writing the asset name from AssetConfig
+            point = Point("ConfigData")
+            point.measurement("ConfigData")
+            point.tag("Table", "AssetConfig")
+            point.tag("Tag1", "Asset")
+            point.field("asset_name", asset_name)
+            self.points.append(point)
+            self.write_api.write(bucket=self.bucket, org=self.org, record=self.points)
+
+            #Writing the attribute name from AssetAttributes
+            point = Point("ConfigData")
+            point.measurement("ConfigData")
+            point.tag("Table", "AssetAttributes")
+            point.tag("Tag1", "Asset")
+            point.field("attribute_name", attribute_name)
+            self.points.append(point)
+            self.write_api.write(bucket=self.bucket, org=self.org, record=self.points)
+        
+            return self.points
+        except Exception as ex:
+            print("\nFailed to write asset attributes details from influx" + str(os.path.basename(__file__)) + str(ex))
+            self.LOG.ERROR(
+                "\nFailed to write asset attributes details from influx" + str(os.path.basename(__file__)) + str(ex))
+            pass
+
+
+    def post_shopattributes(self, data):
+        try:
+            self.points = []
+            shop_name = data["shop_name"]
+            attribute_name = data["attribute_name"]
+
+            #Writing the asset name from AssetConfig
+            point = Point("ConfigData")
+            point.measurement("ConfigData")
+            point.tag("Table", "ShopConfig")
+            point.tag("Tag1", "Shop")
+            point.field("shop_name", shop_name)
+            self.points.append(point)
+            self.write_api.write(bucket=self.bucket, org=self.org, record=self.points)
+
+            #Writing the attribute name from AssetAttributes
+            point = Point("ConfigData")
+            point.measurement("ConfigData")
+            point.tag("Table", "ShopAttributes")
+            point.tag("Tag1", "Shop")
+            point.field("attribute_name", attribute_name)
+            self.points.append(point)
+            self.write_api.write(bucket=self.bucket, org=self.org, record=self.points)
+            return self.points
+        
+        except Exception as ex:
+            print("\nFailed to write shop attributes details from influx" + str(os.path.basename(__file__)) + str(ex))
+            self.LOG.ERROR(
+                "\nFailed to write shop attributes details from influx" + str(os.path.basename(__file__)) + str(ex))
+            pass
+
+    def post_assetfaultruleconfig(self, data):
+        try:
+            self.points = []
+            asset_name = data["asset_name"]
+            rule_name = data["rule_name"]
+            condition = data["condition"]
+            alert = data["alert"]
+            action = data["action"]
+
+            #Writing the asset name from AssetConfig
+            point = Point("ConfigData")
+            point.measurement("ConfigData")
+            point.tag("Table", "AssetConfig")
+            point.tag("Tag1", "Asset")
+            point.field("asset_name", asset_name)
+            self.points.append(point)
+            self.write_api.write(bucket=self.bucket, org=self.org, record=self.points)
+
+            #Writing the attribute name from AssetAttributes
+            point = Point("ConfigData")
+            point.measurement("ConfigData")
+            point.tag("Table", "AssetAlertRules")
+            point.tag("Tag1", "Asset")
+            point.field("rule_id", rule_name)
+            point.field("condition", condition)
+            point.field("alert", alert)
+            point.field("action", action)
+            self.points.append(point)
+            self.write_api.write(bucket=self.bucket, org=self.org, record=self.points)
+        
+            return self.points
+        except Exception as ex:
+            print("\nFailed to write asset fault rule details from influx" + str(os.path.basename(__file__)) + str(ex))
+            self.LOG.ERROR(
+                "\nFailed to write asset fault rule details from influx" + str(os.path.basename(__file__)) + str(ex))
+            pass
+
+def put_assetconfig(self, data):
+        try:
+            
+            self.points = []
+            points = self.points
+            asset_name = data["asset_name"]
+            shop_name = data["shop_name"]
+            factory_name = data["factory_name"]
+            org_name = data["org_name"]
+
+            #Writing the asset name from AssetConfig
+            point = Point("ConfigData")
+            point.tag("Table", "AssetConfig")
+            point.tag("Tag1", "Asset")
+            point.field("asset_name", asset_name)
+            point.time( )
+            print(point)
+            # json_point = serialize_point_to_json(point)
+            # print(json_point)
+            points.append(point)
+            self.write_api.write(bucket=self.bucket, org=self.org, record= point)
+
+            #Writing the shop name from ShopConfig
+            point = Point("ConfigData")
+            point.tag("Table", "ShopConfig")
+            point.tag("Tag1", "Shop")
+            point.field("shop_name", shop_name)
+            point.time( )
+            print(point)
+            points.append(point)
+            self.write_api.write(bucket=self.bucket, org=self.org, record= point)
+
+            #Writing the factory name from FactoryConfig
+            point = Point("ConfigData")
+            point.tag("Table", "FactoryConfig")
+            point.tag("Tag1", "Factory")
+            point.field("factory_name", factory_name)
+            point.time( )
+            print(point)
+            points.append(point)
+            self.write_api.write(bucket=self.bucket, org=self.org, record= point)
+
+            #Writing the org name from OrgConfig
+            point = Point("ConfigData")
+            point.tag("Table", "OrgConfig")
+            point.tag("Tag1", "Org")
+            point.field("org_name", org_name)
+            point.time( )
+            print(point)
+            points.append(point)
+            self.write_api.write(bucket=self.bucket, org=self.org, record= point)
+            print(points)
+            return points
+        except Exception as ex:
+            print("\nFailed to update asset config details from influx: " + str(os.path.basename(__file__)) + str(ex))
+            self.LOG.ERROR(
+                "\nFailed to update asset config details from influx: " + str(os.path.basename(__file__)) + str(ex))
+            pass
