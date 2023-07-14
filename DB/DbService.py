@@ -8,6 +8,7 @@ from influxdb_client import Point
 import os
 from influxdb_client.client.write_api import SYNCHRONOUS
 from datetime import datetime
+import requests
 
 class DbService:
     def __init__(self):
@@ -259,13 +260,13 @@ class DbService:
             query = '''
                         import "join"
 
-                         l = from(bucket: "59830e07-71a6-4ff0-9531-1f9fc4813fe0")
+                         l = from(bucket: \"''' + self.bucket + '''\")
                           |> range(start: 0)
                           |> filter(fn: (r) => r["_measurement"] == "ConfigData" and r["Tag1"] == "Asset" and r["Table"] == "AssetConfig")
                           |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
                           |> keep(columns: ["asset_name", "asset_id"])
   
-                         r = from(bucket: "59830e07-71a6-4ff0-9531-1f9fc4813fe0")
+                         r = from(bucket: \"''' + self.bucket + '''\")
                           |> range(start: 0)
                           |> filter(fn: (r) => r["_measurement"] == "ConfigData" and r["Tag1"] == "Asset" and r["Table"] == "AssetRuleMapping")
                           |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
@@ -279,7 +280,7 @@ class DbService:
                                                     rule_id: r.rule_id}),
                                  ) 
 
-                         b = from(bucket: "59830e07-71a6-4ff0-9531-1f9fc4813fe0")
+                         b = from(bucket: \"''' + self.bucket + '''\")
                            |> range(start: 0)
                            |> filter(fn: (r) => r["_measurement"] == "ConfigData" and r["Tag1"] == "Asset" and r["Table"] == "AssetAlertRules")              
                            |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
@@ -471,26 +472,30 @@ class DbService:
                 "\nFailed to write asset fault rule details from influx" + str(os.path.basename(__file__)) + str(ex))
             pass
 
-def put_assetconfig(self, data):
+    def put_assetconfig(self, data):
         try:
-            
             self.points = []
             points = self.points
-            asset_name = data["asset_name"]
-            shop_name = data["shop_name"]
-            factory_name = data["factory_name"]
-            org_name = data["org_name"]
 
-            #Writing the asset name from AssetConfig
+            asset_name = data["asset_name"]
+            asset_id = data["asset_id"]
+            shop_name = data["shop_name"]
+            shop_id = data["shop_id"]
+            factory_name = data["factory_name"]
+            factory_id = data["factory_id"]
+            org_name = data["org_name"]
+            org_id = data["org_id"]
+            # shop_name = data1["shop_name"]
+            # factory_name = data1["factory_name"]
+            # org_name = data1["org_name"]
+
             point = Point("ConfigData")
             point.tag("Table", "AssetConfig")
             point.tag("Tag1", "Asset")
             point.field("asset_name", asset_name)
-            point.time( )
+            point.field(asset_id)
             print(point)
-            # json_point = serialize_point_to_json(point)
-            # print(json_point)
-            points.append(point)
+            # points.append(point)
             self.write_api.write(bucket=self.bucket, org=self.org, record= point)
 
             #Writing the shop name from ShopConfig
@@ -498,7 +503,7 @@ def put_assetconfig(self, data):
             point.tag("Table", "ShopConfig")
             point.tag("Tag1", "Shop")
             point.field("shop_name", shop_name)
-            point.time( )
+            point.field(shop_id)
             print(point)
             points.append(point)
             self.write_api.write(bucket=self.bucket, org=self.org, record= point)
@@ -508,7 +513,7 @@ def put_assetconfig(self, data):
             point.tag("Table", "FactoryConfig")
             point.tag("Tag1", "Factory")
             point.field("factory_name", factory_name)
-            point.time( )
+            point.field(factory_id)
             print(point)
             points.append(point)
             self.write_api.write(bucket=self.bucket, org=self.org, record= point)
@@ -518,7 +523,7 @@ def put_assetconfig(self, data):
             point.tag("Table", "OrgConfig")
             point.tag("Tag1", "Org")
             point.field("org_name", org_name)
-            point.time( )
+            point.field(org_id)
             print(point)
             points.append(point)
             self.write_api.write(bucket=self.bucket, org=self.org, record= point)
@@ -529,3 +534,76 @@ def put_assetconfig(self, data):
             self.LOG.ERROR(
                 "\nFailed to update asset config details from influx: " + str(os.path.basename(__file__)) + str(ex))
             pass
+
+    def put_assetattributes(self, data):
+        try:
+            self.points = []
+            asset_name = data["asset_name"]
+            asset_id = data["asset_id"]
+            attribute_name = data["attribute_name"]
+            attribute_id = data["attribute_id"]
+
+            #Writing the asset name from AssetConfig
+            point = Point("ConfigData")
+            point.measurement("ConfigData")
+            point.tag("Table", "AssetConfig")
+            point.tag("Tag1", "Asset")
+            point.field("asset_name", asset_name)
+            point(asset_id)
+            self.points.append(point)
+            self.write_api.write(bucket=self.bucket, org=self.org, record=self.points)
+
+            #Writing the attribute name from AssetAttributes
+            point = Point("ConfigData")
+            point.measurement("ConfigData")
+            point.tag("Table", "AssetAttributes")
+            point.tag("Tag1", "Asset")
+            point.field("attribute_name", attribute_name)
+            point(attribute_id)
+            self.points.append(point)
+            self.write_api.write(bucket=self.bucket, org=self.org, record=self.points)
+        
+            return self.points
+        except Exception as ex:
+            print("\nFailed to write asset attributes details from influx" + str(os.path.basename(__file__)) + str(ex))
+            self.LOG.ERROR(
+                "\nFailed to write asset attributes details from influx" + str(os.path.basename(__file__)) + str(ex))
+            pass
+
+
+    def put_shopattributes(self, data):
+        try:
+            self.points = []
+            shop_name = data["shop_name"]
+            shop_id = data["shop_id"]
+            attribute_name = data["attribute_name"]
+            attribute_id = data["attribute_id"]
+
+            #Writing the asset name from AssetConfig
+            point = Point("ConfigData")
+            point.measurement("ConfigData")
+            point.tag("Table", "ShopConfig")
+            point.tag("Tag1", "Shop")
+            point.field("shop_name", shop_name)
+            point(shop_id)
+            self.points.append(point)
+            self.write_api.write(bucket=self.bucket, org=self.org, record=self.points)
+
+            #Writing the attribute name from AssetAttributes
+            point = Point("ConfigData")
+            point.measurement("ConfigData")
+            point.tag("Table", "AssetAttributes")
+            point.tag("Tag1", "Asset")
+            point.field("attribute_name", attribute_name)
+            point(attribute_id)
+            self.points.append(point)
+            self.write_api.write(bucket=self.bucket, org=self.org, record=self.points)
+        
+            return self.points
+        except Exception as ex:
+            print("\nFailed to write asset attributes details from influx" + str(os.path.basename(__file__)) + str(ex))
+            self.LOG.ERROR(
+                "\nFailed to write asset attributes details from influx" + str(os.path.basename(__file__)) + str(ex))
+            pass
+
+

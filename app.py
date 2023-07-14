@@ -187,22 +187,83 @@ def post_assetfaultruleconfig():
         LOG.ERROR("Exception /emsadminapi/v1/post_assetfaultruleconfig: " + str(ex))
         return ex
 
-@app.route('/emsadminapi/v1/put_assetattributes', methods=['PUT'])
-def put_assetattributes():
+@app.route('/emsadminapi/v1/put_assetconfig', methods=['PUT'])
+def put_assetconfig():
     try:
-        # cache_key = f"get_assetattributes:{timerange}:{asset}"
+        dict_data = request.get_json()
+        temp = json.dumps(dict_data)
+        data = json.loads(temp)
+        print(data)
+        # dict_data2 = request.get_json()
+        # temp = json.dumps(dict_data2)
+        # data2 = json.loads(temp)
+        
+        # cache_key = f"put_assetconfig:{timerange}:{asset}"
         # cached_data = cache.get(cache_key)
         # print(cache_key)
         # if cached_data:
         #     return jsonify(json.loads(cached_data)), 200
-        output = dbService.put_assetattributes()
+        output = dbService.put_assetconfig(data)
+        # cache.set(cache_key, json.dumps(output), ex=900)
+        print("Response /emsadminapi/v1/put_assetconfig")
+        LOG.INFO("Response /emsadminapi/v1/put_assetconfig ")
+        return output, 200
+    except Exception as ex:
+        print("Exception /emsadminapi/v1/put_assetconfig" + str(ex))
+        LOG.ERROR("Exception /emsadminapi/v1/put_assetconfig: " + str(ex))
+        return ex
+    
+
+@app.route('/emsadminapi/v1/put_assetattributes', methods=['PUT'])
+def put_assetattributes():
+    try:
+        dict_data = request.get_json()
+        temp = json.dumps(dict_data)
+        data = json.loads(temp)
+        print(data)
+        # dict_data2 = request.get_json()
+        # temp = json.dumps(dict_data2)
+        # data2 = json.loads(temp)
+        
+        # cache_key = f"put_assetattributes:{timerange}:{asset}"
+        # cached_data = cache.get(cache_key)
+        # print(cache_key)
+        # if cached_data:
+        #     return jsonify(json.loads(cached_data)), 200
+        output = dbService.put_assetattributes(data)
         # cache.set(cache_key, json.dumps(output), ex=900)
         print("Response /emsadminapi/v1/put_assetattributes")
         LOG.INFO("Response /emsadminapi/v1/put_assetattributes ")
-        return jsonify(output), 200
+        return output, 200
     except Exception as ex:
-        print("Exception /emsadminapi/v1/put_assetattributes" + str(ex))
+        print("Exception /emsadminapi/v1/put_assetattributes: " + str(ex))
         LOG.ERROR("Exception /emsadminapi/v1/put_assetattributes: " + str(ex))
+        return ex
+    
+@app.route('/emsadminapi/v1/put_shopattributes', methods=['PUT'])
+def put_shopattributes():
+    try:
+        dict_data = request.get_json()
+        temp = json.dumps(dict_data)
+        data = json.loads(temp)
+        print(data)
+        # dict_data2 = request.get_json()
+        # temp = json.dumps(dict_data2)
+        # data2 = json.loads(temp)
+        
+        # cache_key = f"put_shopattributes:{timerange}:{asset}"
+        # cached_data = cache.get(cache_key)
+        # print(cache_key)
+        # if cached_data:
+        #     return jsonify(json.loads(cached_data)), 200
+        output = dbService.put_shopattributes(data)
+        # cache.set(cache_key, json.dumps(output), ex=900)
+        print("Response /emsadminapi/v1/put_shopattributes")
+        LOG.INFO("Response /emsadminapi/v1/put_shopattributes ")
+        return output, 200
+    except Exception as ex:
+        print("Exception /emsadminapi/v1/put_shopattributes: " + str(ex))
+        LOG.ERROR("Exception /emsadminapi/v1/put_shopattributes: " + str(ex))
         return ex
     
 if __name__ == '__main__':
