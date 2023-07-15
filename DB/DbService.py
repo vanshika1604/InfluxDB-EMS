@@ -439,7 +439,6 @@ class DbService:
         try:
             self.points = []
             asset_name = data["asset_name"]
-            rule_name = data["rule_name"]
             condition = data["condition"]
             alert = data["alert"]
             action = data["action"]
@@ -458,7 +457,6 @@ class DbService:
             point.measurement("ConfigData")
             point.tag("Table", "AssetAlertRules")
             point.tag("Tag1", "Asset")
-            point.field("rule_id", rule_name)
             point.field("condition", condition)
             point.field("alert", alert)
             point.field("action", action)
@@ -485,49 +483,110 @@ class DbService:
             factory_id = data["factory_id"]
             org_name = data["org_name"]
             org_id = data["org_id"]
-            # shop_name = data1["shop_name"]
-            # factory_name = data1["factory_name"]
-            # org_name = data1["org_name"]
 
+            # Updating the asset name from AssetConfig
+            query = '''from(bucket: \"''' + self.bucket + '''\")
+                        |> range(start: 0)
+                        |> filter(fn: (r) => r["_measurement"] == "ConfigData")
+                        |> filter(fn: (r) => r["Table"] == "AssetConfig")
+                        |> filter(fn: (r) => r["Tag1"] == "Asset")
+                        |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+                        |> filter(fn: (r) => r["asset_id"] == \"''' + asset_id + '''\")
+                        '''
+            
+            data_frame = self.query_api.query_data_frame(query)
+            data_frame.drop(['result', 'table'], axis=1, inplace=True)
+            df = pd.DataFrame(data_frame)
+            # time = df.get("_time")
+            # time = df.loc[df['asset_id']==asset_id, '_time'].values[0]
+            time = df.loc[0, "_time"]
+            # print(time)
             point = Point("ConfigData")
             point.tag("Table", "AssetConfig")
             point.tag("Tag1", "Asset")
             point.field("asset_name", asset_name)
-            point.field(asset_id)
+            point.time(time)
             print(point)
             # points.append(point)
             self.write_api.write(bucket=self.bucket, org=self.org, record= point)
 
-            #Writing the shop name from ShopConfig
+            # Updating the shop name from ShopConfig
+            query = '''from(bucket: \"''' + self.bucket + '''\")
+                        |> range(start: 0)
+                        |> filter(fn: (r) => r["_measurement"] == "ConfigData")
+                        |> filter(fn: (r) => r["Table"] == "ShopConfig")
+                        |> filter(fn: (r) => r["Tag1"] == "Shop")
+                        |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+                        |> filter(fn: (r) => r["shop_id"] == \"''' + shop_id + '''\")
+                        '''
+            
+            data_frame = self.query_api.query_data_frame(query)
+            data_frame.drop(['result', 'table'], axis=1, inplace=True)
+            df = pd.DataFrame(data_frame)
+            # time = df.get("_time")
+            # time = df.loc[df['shop_id']==shop_id, '_time'].values[0]
+            time = df.loc[0, "_time"]
+            # print(time)
             point = Point("ConfigData")
             point.tag("Table", "ShopConfig")
             point.tag("Tag1", "Shop")
             point.field("shop_name", shop_name)
-            point.field(shop_id)
+            point.time(time)
             print(point)
-            points.append(point)
+            # points.append(point)
             self.write_api.write(bucket=self.bucket, org=self.org, record= point)
 
-            #Writing the factory name from FactoryConfig
+            # Updating the factory name from FactoryConfig
+            query = '''from(bucket: \"''' + self.bucket + '''\")
+                        |> range(start: 0)
+                        |> filter(fn: (r) => r["_measurement"] == "ConfigData")
+                        |> filter(fn: (r) => r["Table"] == "FactoryConfig")
+                        |> filter(fn: (r) => r["Tag1"] == "Factory")
+                        |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+                        |> filter(fn: (r) => r["factory_id"] == \"''' + factory_id + '''\")
+                        '''
+            
+            data_frame = self.query_api.query_data_frame(query)
+            data_frame.drop(['result', 'table'], axis=1, inplace=True)
+            df = pd.DataFrame(data_frame)
+            # time = df.get("_time")
+            # time = df.loc[df['factory_id']==factory_id, '_time'].values[0]
+            time = df.loc[0, "_time"]
+            # print(time)
             point = Point("ConfigData")
             point.tag("Table", "FactoryConfig")
             point.tag("Tag1", "Factory")
             point.field("factory_name", factory_name)
-            point.field(factory_id)
+            point.time(time)
             print(point)
-            points.append(point)
+            # points.append(point)
             self.write_api.write(bucket=self.bucket, org=self.org, record= point)
 
-            #Writing the org name from OrgConfig
+            # Updating the org name from OrgConfig
+            query = '''from(bucket: \"''' + self.bucket + '''\")
+                        |> range(start: 0)
+                        |> filter(fn: (r) => r["_measurement"] == "ConfigData")
+                        |> filter(fn: (r) => r["Table"] == "OrgConfig")
+                        |> filter(fn: (r) => r["Tag1"] == "Org")
+                        |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+                        |> filter(fn: (r) => r["org_id"] == \"''' + org_id + '''\")
+                        '''
+            
+            data_frame = self.query_api.query_data_frame(query)
+            data_frame.drop(['result', 'table'], axis=1, inplace=True)
+            df = pd.DataFrame(data_frame)
+            # time = df.get("_time")
+            # time = df.loc[df['org_id']==org_id, '_time'].values[0]
+            time = df.loc[0, "_time"]
+            # print(time)
             point = Point("ConfigData")
             point.tag("Table", "OrgConfig")
             point.tag("Tag1", "Org")
             point.field("org_name", org_name)
-            point.field(org_id)
+            point.time(time)
             print(point)
-            points.append(point)
+            # points.append(point)
             self.write_api.write(bucket=self.bucket, org=self.org, record= point)
-            print(points)
             return points
         except Exception as ex:
             print("\nFailed to update asset config details from influx: " + str(os.path.basename(__file__)) + str(ex))
@@ -543,25 +602,57 @@ class DbService:
             attribute_name = data["attribute_name"]
             attribute_id = data["attribute_id"]
 
-            #Writing the asset name from AssetConfig
+            # Updating the asset name from AssetConfig
+            query = '''from(bucket: \"''' + self.bucket + '''\")
+                        |> range(start: 0)
+                        |> filter(fn: (r) => r["_measurement"] == "ConfigData")
+                        |> filter(fn: (r) => r["Table"] == "AssetConfig")
+                        |> filter(fn: (r) => r["Tag1"] == "Asset")
+                        |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+                        |> filter(fn: (r) => r["asset_id"] == \"''' + asset_id + '''\")
+                        '''
+            
+            data_frame = self.query_api.query_data_frame(query)
+            data_frame.drop(['result', 'table'], axis=1, inplace=True)
+            df = pd.DataFrame(data_frame)
+            # time = df.get("_time")
+            # time = df.loc[df['asset_id']==asset_id, '_time'].values[0]
+            time = df.loc[0, "_time"]
+            # print(time)
             point = Point("ConfigData")
-            point.measurement("ConfigData")
             point.tag("Table", "AssetConfig")
             point.tag("Tag1", "Asset")
             point.field("asset_name", asset_name)
-            point(asset_id)
-            self.points.append(point)
-            self.write_api.write(bucket=self.bucket, org=self.org, record=self.points)
+            point.time(time)
+            # print(point)
+            # points.append(point)
+            self.write_api.write(bucket=self.bucket, org=self.org, record= point)
 
-            #Writing the attribute name from AssetAttributes
+            # Updating the attribute name from AssetAttributes
+            query = '''from(bucket: \"''' + self.bucket + '''\")
+                        |> range(start: 0)
+                        |> filter(fn: (r) => r["_measurement"] == "ConfigData")
+                        |> filter(fn: (r) => r["Table"] == "AssetAttributes")
+                        |> filter(fn: (r) => r["Tag1"] == "Asset")
+                        |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+                        |> filter(fn: (r) => r["attribute_id"] == \"''' + attribute_id + '''\")
+                        '''
+            
+            data_frame = self.query_api.query_data_frame(query)
+            data_frame.drop(['result', 'table'], axis=1, inplace=True)
+            df = pd.DataFrame(data_frame)
+            # time = df.get("_time")
+            # time = df.loc[df['attribute_id']==attribute_id, '_time'].values[0]
+            time = df.loc[0, "_time"]
+            # print(time)
             point = Point("ConfigData")
-            point.measurement("ConfigData")
             point.tag("Table", "AssetAttributes")
             point.tag("Tag1", "Asset")
             point.field("attribute_name", attribute_name)
-            point(attribute_id)
-            self.points.append(point)
-            self.write_api.write(bucket=self.bucket, org=self.org, record=self.points)
+            point.time(time)
+            # print(point)
+            # points.append(point)
+            self.write_api.write(bucket=self.bucket, org=self.org, record= point)
         
             return self.points
         except Exception as ex:
@@ -579,25 +670,57 @@ class DbService:
             attribute_name = data["attribute_name"]
             attribute_id = data["attribute_id"]
 
-            #Writing the asset name from AssetConfig
+            # Updating the shop name from ShopConfig
+            query = '''from(bucket: \"''' + self.bucket + '''\")
+                        |> range(start: 0)
+                        |> filter(fn: (r) => r["_measurement"] == "ConfigData")
+                        |> filter(fn: (r) => r["Table"] == "ShopConfig")
+                        |> filter(fn: (r) => r["Tag1"] == "Shop")
+                        |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+                        |> filter(fn: (r) => r["shop_id"] == \"''' + shop_id + '''\")
+                        '''
+            
+            data_frame = self.query_api.query_data_frame(query)
+            data_frame.drop(['result', 'table'], axis=1, inplace=True)
+            df = pd.DataFrame(data_frame)
+            # time = df.get("_time")
+            # time = df.loc[df['shop_id']==shop_id, '_time'].values[0]
+            time = df.loc[0, "_time"]
+            # print(time)
             point = Point("ConfigData")
-            point.measurement("ConfigData")
             point.tag("Table", "ShopConfig")
             point.tag("Tag1", "Shop")
             point.field("shop_name", shop_name)
-            point(shop_id)
-            self.points.append(point)
-            self.write_api.write(bucket=self.bucket, org=self.org, record=self.points)
+            point.time(time)
+            # print(point)
+            # points.append(point)
+            self.write_api.write(bucket=self.bucket, org=self.org, record= point)
 
-            #Writing the attribute name from AssetAttributes
+            # Updating the attribute name from ShopAttributes
+            query = '''from(bucket: \"''' + self.bucket + '''\")
+                        |> range(start: 0)
+                        |> filter(fn: (r) => r["_measurement"] == "ConfigData")
+                        |> filter(fn: (r) => r["Table"] == "ShopAttributes")
+                        |> filter(fn: (r) => r["Tag1"] == "Shop")
+                        |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+                        |> filter(fn: (r) => r["attribute_id"] == \"''' + attribute_id + '''\")
+                        '''
+            
+            data_frame = self.query_api.query_data_frame(query)
+            data_frame.drop(['result', 'table'], axis=1, inplace=True)
+            df = pd.DataFrame(data_frame)
+            # time = df.get("_time")
+            # time = df.loc[df['attribute_id']==attribute_id, '_time'].values[0]
+            time = df.loc[0, "_time"]
+            # print(time)
             point = Point("ConfigData")
-            point.measurement("ConfigData")
-            point.tag("Table", "AssetAttributes")
-            point.tag("Tag1", "Asset")
+            point.tag("Table", "ShopAttributes")
+            point.tag("Tag1", "Shop")
             point.field("attribute_name", attribute_name)
-            point(attribute_id)
-            self.points.append(point)
-            self.write_api.write(bucket=self.bucket, org=self.org, record=self.points)
+            point.time(time)
+            # print(point)
+            # points.append(point)
+            self.write_api.write(bucket=self.bucket, org=self.org, record= point)
         
             return self.points
         except Exception as ex:
@@ -606,4 +729,148 @@ class DbService:
                 "\nFailed to write asset attributes details from influx" + str(os.path.basename(__file__)) + str(ex))
             pass
 
+    def put_assetfaultruleconfig(self, data):
+        try:
+            self.points = []
+            asset_name = data["asset_name"]
+            condition = data["condition"]
+            alert = data["alert"]
+            action = data["action"]
+            rule_id = data["rule_id"]
+
+            # Updating the condition, alert, action, asset_name from AssetFaultRuleConfig
+            query = '''from(bucket: \"''' + self.bucket + '''\")
+                        |> range(start: 0)
+                        |> filter(fn: (r) => r["_measurement"] == "ConfigData")
+                        |> filter(fn: (r) => r["Table"] == "AssetFaultRuleConfig")
+                        |> filter(fn: (r) => r["Tag1"] == "Shop")
+                        |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+                        |> filter(fn: (r) => r["rule_id"] == \"''' + rule_id + '''\")
+                        '''
+            
+            data_frame = self.query_api.query_data_frame(query)
+            data_frame.drop(['result', 'table'], axis=1, inplace=True)
+            df = pd.DataFrame(data_frame)
+            # time = df.get("_time")
+            # time = df.loc[df['attribute_id']==attribute_id, '_time'].values[0]
+            time = df.loc[0, "_time"]
+            # print(time)
+            point = Point("ConfigData")
+            point.tag("Table", "AssetFaultRuleConfig")
+            point.tag("Tag1", "Asset")
+            point.field("asset_name", asset_name)
+            point.field("condition", condition)
+            point.field("alert", alert)
+            point.field("action", action)
+            point.time(time)
+            # print(point)
+            # points.append(point)
+            self.write_api.write(bucket=self.bucket, org=self.org, record= point)
+        
+            return self.points
+        except Exception as ex:
+            print("\nFailed to write asset fault rule details from influx" + str(os.path.basename(__file__)) + str(ex))
+            self.LOG.ERROR(
+                "\nFailed to write asset fault rule details from influx" + str(os.path.basename(__file__)) + str(ex))
+            pass
+
+    def delete_assetconfig(self, data):
+        try:
+            self.points = []
+            points = self.points
+
+            asset_id = data["asset_id"]
+            shop_id = data["shop_id"]
+            factory_id = data["factory_id"]
+            org_id = data["org_id"]
+
+            # Deleting the asset name from AssetConfig
+            query = '''from(bucket: \"''' + self.bucket + '''\")
+                        |> range(start: 0)
+                        |> filter(fn: (r) => r["_measurement"] == "ConfigData")
+                        |> filter(fn: (r) => r["Table"] == "AssetConfig")
+                        |> filter(fn: (r) => r["Tag1"] == "Asset")
+                        |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+                        |> filter(fn: (r) => r["asset_id"] == \"''' + asset_id + '''\")
+                        '''
+            
+            data_frame = self.query_api.query_data_frame(query)
+            data_frame.drop(['result', 'table'], axis=1, inplace=True)
+            df = pd.DataFrame(data_frame)
+            # time = df.get("_time")
+            # time = df.loc[df['asset_id']==asset_id, '_time'].values[0]
+            time = df.loc[0, "_time"]
+            # print(time)
+            # current_time = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+            delete_api= self.client.delete_api()
+            delete_api.delete(start = time, stop=time, predicate='_measurement = "ConfigData"',bucket=self.bucket, org=self.org)
+
+            # Deleting the shop name from ShopConfig
+            query = '''from(bucket: \"''' + self.bucket + '''\")
+                        |> range(start: 0)
+                        |> filter(fn: (r) => r["_measurement"] == "ConfigData")
+                        |> filter(fn: (r) => r["Table"] == "ShopConfig")
+                        |> filter(fn: (r) => r["Tag1"] == "Shop")
+                        |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+                        |> filter(fn: (r) => r["shop_id"] == \"''' + shop_id + '''\")
+                        '''
+            
+            data_frame = self.query_api.query_data_frame(query)
+            data_frame.drop(['result', 'table'], axis=1, inplace=True)
+            df = pd.DataFrame(data_frame)
+            # time = df.get("_time")
+            # time = df.loc[df['shop_id']==shop_id, '_time'].values[0]
+            time = df.loc[0, "_time"]
+            # print(time)
+            # current_time = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+            delete_api= self.client.delete_api()
+            delete_api.delete(start = time, stop=time, predicate='_measurement = "ConfigData"',bucket=self.bucket, org=self.org)
+
+            # Deleting the factory name from FactoryConfig
+            query = '''from(bucket: \"''' + self.bucket + '''\")
+                        |> range(start: 0)
+                        |> filter(fn: (r) => r["_measurement"] == "ConfigData")
+                        |> filter(fn: (r) => r["Table"] == "FactoryConfig")
+                        |> filter(fn: (r) => r["Tag1"] == "Factory")
+                        |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+                        |> filter(fn: (r) => r["factory_id"] == \"''' + factory_id + '''\")
+                        '''
+            
+            data_frame = self.query_api.query_data_frame(query)
+            data_frame.drop(['result', 'table'], axis=1, inplace=True)
+            df = pd.DataFrame(data_frame)
+            # time = df.get("_time")
+            # time = df.loc[df['factory_id']==factory_id, '_time'].values[0]
+            time = df.loc[0, "_time"]
+            # print(time)
+            # current_time = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+            delete_api= self.client.delete_api()
+            delete_api.delete(start = time, stop=time, predicate='_measurement = "ConfigData"',bucket=self.bucket, org=self.org)
+
+            # Deleting the org name from OrgConfig
+            query = '''from(bucket: \"''' + self.bucket + '''\")
+                        |> range(start: 0)
+                        |> filter(fn: (r) => r["_measurement"] == "ConfigData")
+                        |> filter(fn: (r) => r["Table"] == "OrgConfig")
+                        |> filter(fn: (r) => r["Tag1"] == "Org")
+                        |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+                        |> filter(fn: (r) => r["org_id"] == \"''' + org_id + '''\")
+                        '''
+            
+            data_frame = self.query_api.query_data_frame(query)
+            data_frame.drop(['result', 'table'], axis=1, inplace=True)
+            df = pd.DataFrame(data_frame)
+            # time = df.get("_time")
+            # time = df.loc[df['org_id']==org_id, '_time'].values[0]
+            time = df.loc[0, "_time"]
+            # print(time)
+            # current_time = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+            delete_api= self.client.delete_api()
+            delete_api.delete(start = time, stop=time, predicate='_measurement = "ConfigData"',bucket=self.bucket, org=self.org)
+            return points
+        except Exception as ex:
+            print("\nFailed to update asset config details from influx: " + str(os.path.basename(__file__)) + str(ex))
+            self.LOG.ERROR(
+                "\nFailed to update asset config details from influx: " + str(os.path.basename(__file__)) + str(ex))
+            pass
 

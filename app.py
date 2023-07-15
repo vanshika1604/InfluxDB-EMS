@@ -247,9 +247,6 @@ def put_shopattributes():
         temp = json.dumps(dict_data)
         data = json.loads(temp)
         print(data)
-        # dict_data2 = request.get_json()
-        # temp = json.dumps(dict_data2)
-        # data2 = json.loads(temp)
         
         # cache_key = f"put_shopattributes:{timerange}:{asset}"
         # cached_data = cache.get(cache_key)
@@ -264,6 +261,55 @@ def put_shopattributes():
     except Exception as ex:
         print("Exception /emsadminapi/v1/put_shopattributes: " + str(ex))
         LOG.ERROR("Exception /emsadminapi/v1/put_shopattributes: " + str(ex))
+        return ex
+    
+@app.route('/emsadminapi/v1/put_assetfaultruleconfig', methods=['PUT'])
+def put_assetfaultruleconfig():
+    try:
+        dict_data = request.get_json()
+        temp = json.dumps(dict_data)
+        data = json.loads(temp)
+        print(data)
+        
+        # cache_key = f"put_assetfaultruleconfig:{timerange}:{asset}"
+        # cached_data = cache.get(cache_key)
+        # print(cache_key)
+        # if cached_data:
+        #     return jsonify(json.loads(cached_data)), 200
+        output = dbService.put_assetfaultruleconfig(data)
+        # cache.set(cache_key, json.dumps(output), ex=900)
+        print("Response /emsadminapi/v1/put_assetfaultruleconfig")
+        LOG.INFO("Response /emsadminapi/v1/put_assetfaultruleconfig ")
+        return output, 200
+    except Exception as ex:
+        print("Exception /emsadminapi/v1/put_assetfaultruleconfig: " + str(ex))
+        LOG.ERROR("Exception /emsadminapi/v1/put_assetfaultruleconfig: " + str(ex))
+        return ex
+    
+@app.route('/emsadminapi/v1/delete_assetconfig', methods=['DELETE'])
+def delete_assetconfig():
+    try:
+        dict_data = request.get_json()
+        temp = json.dumps(dict_data)
+        data = json.loads(temp)
+        print(data)
+        # dict_data2 = request.get_json()
+        # temp = json.dumps(dict_data2)
+        # data2 = json.loads(temp)
+        
+        # cache_key = f"delete_assetconfig:{timerange}:{asset}"
+        # cached_data = cache.get(cache_key)
+        # print(cache_key)
+        # if cached_data:
+        #     return jsonify(json.loads(cached_data)), 200
+        output = dbService.delete_assetconfig(data)
+        # cache.set(cache_key, json.dumps(output), ex=900)
+        print("Response /emsadminapi/v1/delete_assetconfig")
+        LOG.INFO("Response /emsadminapi/v1/delete_assetconfig ")
+        return output, 200
+    except Exception as ex:
+        print("Exception /emsadminapi/v1/delete_assetconfig" + str(ex))
+        LOG.ERROR("Exception /emsadminapi/v1/delete_assetconfig: " + str(ex))
         return ex
     
 if __name__ == '__main__':
