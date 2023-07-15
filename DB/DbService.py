@@ -8,7 +8,6 @@ from influxdb_client import Point
 import os
 from influxdb_client.client.write_api import SYNCHRONOUS
 from datetime import datetime
-import requests
 
 class DbService:
     def __init__(self):
