@@ -1,5 +1,4 @@
 import json
-from influxdb_client import Point, WritePrecision
 import pandas as pd
 from waitress import serve
 from DB.DbService import DbService
@@ -22,20 +21,20 @@ dbService = DbService()
 LOG = Log()
 config_handler = ConfigHandler()
 configdata = config_handler.config_read()
-# host = os.environ.get('REDIS_HOST', configdata['Redis']['redis_host'])
-# port = os.environ.get('REDIS_PORT', configdata['Redis']['redis_port'])
-# cache = redis.Redis(host=host, port=port)
+host = os.environ.get('REDIS_HOST', configdata['Redis']['redis_host'])
+port = os.environ.get('REDIS_PORT', configdata['Redis']['redis_port'])
+cache = redis.Redis(host=host, port=port)
 
 @app.route('/emsadminapi/v1/get_assetconfig', methods=['GET'])
 def get_assetconfig():
     try:
-        # cache_key = f"get_assetconfig:{timerange}:{asset}"
-        # cached_data = cache.get(cache_key)
-        # print(cache_key)
-        # if cached_data:
-        #     return jsonify(json.loads(cached_data)), 200
+        cache_key = "get_assetconfig"
+        cached_data = cache.get(cache_key)
+        print(cache_key)
+        if cached_data:
+            return jsonify(json.loads(cached_data)), 200
         output = dbService.get_assetconfig()
-        # cache.set(cache_key, json.dumps(output), ex=900)
+        cache.set(cache_key, json.dumps(output), ex=900)
         print("Response /emsadminapi/v1/get_assetconfig ")
         LOG.INFO("Response /emsadminapi/v1/get_assetconfig ")
         return jsonify(output), 200
@@ -48,13 +47,13 @@ def get_assetconfig():
 @app.route('/emsadminapi/v1/get_assetattributes', methods=['GET'])
 def get_assetattributes():
     try:
-        # cache_key = f"get_assetattributes:{timerange}:{asset}"
-        # cached_data = cache.get(cache_key)
-        # print(cache_key)
-        # if cached_data:
-        #     return jsonify(json.loads(cached_data)), 200
+        cache_key = "get_assetattributes"
+        cached_data = cache.get(cache_key)
+        print(cache_key)
+        if cached_data:
+            return jsonify(json.loads(cached_data)), 200
         output = dbService.get_assetattributes()
-        # cache.set(cache_key, json.dumps(output), ex=900)
+        cache.set(cache_key, json.dumps(output), ex=900)
         print("Response /emsadminapi/v1/get_assetattributes ")
         LOG.INFO("Response /emsadminapi/v1/get_assetattributes ")
         return jsonify(output), 200
@@ -66,13 +65,13 @@ def get_assetattributes():
 @app.route('/emsadminapi/v1/get_shopattributes', methods=['GET'])
 def get_shopattributes():
     try:
-        # cache_key = f"get_shopattributes:{timerange}:{asset}"
-        # cached_data = cache.get(cache_key)
-        # print(cache_key)
-        # if cached_data:
-        #     return jsonify(json.loads(cached_data)), 200
+        cache_key = f"get_shopattributes"
+        cached_data = cache.get(cache_key)
+        print(cache_key)
+        if cached_data:
+            return jsonify(json.loads(cached_data)), 200
         output = dbService.get_shopattributes()
-        # cache.set(cache_key, json.dumps(output), ex=900)
+        cache.set(cache_key, json.dumps(output), ex=900)
         print("Response /emsadminapi/v1/get_shopattributes ")
         LOG.INFO("Response /emsadminapi/v1/get_shopattributes ")
         return jsonify(output), 200
@@ -84,13 +83,13 @@ def get_shopattributes():
 @app.route('/emsadminapi/v1/get_assetfaultruleconfig', methods=['GET'])
 def get_assetfaultruleconfig():
     try:
-        # cache_key = f"get_assetfaultruleconfig:{timerange}:{asset}"
-        # cached_data = cache.get(cache_key)
-        # print(cache_key)
-        # if cached_data:
-        #     return jsonify(json.loads(cached_data)), 200
+        cache_key = "get_assetfaultruleconfig"
+        cached_data = cache.get(cache_key)
+        print(cache_key)
+        if cached_data:
+            return jsonify(json.loads(cached_data)), 200
         output = dbService.get_assetfaultruleconfig()
-        # cache.set(cache_key, json.dumps(output), ex=900)
+        cache.set(cache_key, json.dumps(output), ex=900)
         print("Response /emsadminapi/v1/get_assetfaultruleconfig ")
         LOG.INFO("Response /emsadminapi/v1/get_assetfaultruleconfig ")
         return jsonify(output), 200
@@ -105,7 +104,7 @@ def post_assetconfig():
         dict_data = request.get_json()
         temp = json.dumps(dict_data)
         data = json.loads(temp)
-        # cache_key = f"post_assetconfig:{timerange}:{asset}"
+        # cache_key = "post_assetconfig"
         # cached_data = cache.get(cache_key)
         # print(cache_key)
         # if cached_data:
@@ -127,7 +126,7 @@ def post_assetattributes():
         dict_data = request.get_json()
         temp = json.dumps(dict_data)
         data = json.loads(temp)
-        # cache_key = f"post_assetattributes:{timerange}:{asset}"
+        # cache_key = f"post_assetattributes"
         # cached_data = cache.get(cache_key)
         # print(cache_key)
         # if cached_data:
@@ -149,7 +148,7 @@ def post_shopattributes():
         dict_data = request.get_json()
         temp = json.dumps(dict_data)
         data = json.loads(temp)
-        # cache_key = f"post_shopattributes:{timerange}:{asset}"
+        # cache_key = f"post_shopattributes"
         # cached_data = cache.get(cache_key)
         # print(cache_key)
         # if cached_data:
@@ -171,7 +170,7 @@ def post_assetfaultruleconfig():
         dict_data = request.get_json()
         temp = json.dumps(dict_data)
         data = json.loads(temp)
-        # cache_key = f"post_assetfaultruleconfig:{timerange}:{asset}"
+        # cache_key = "post_assetfaultruleconfig"
         # cached_data = cache.get(cache_key)
         # print(cache_key)
         # if cached_data:
@@ -193,18 +192,11 @@ def put_assetconfig():
         dict_data = request.get_json()
         temp = json.dumps(dict_data)
         data = json.loads(temp)
-        print(data)
+        # print(data)
         # dict_data2 = request.get_json()
         # temp = json.dumps(dict_data2)
         # data2 = json.loads(temp)
-        
-        # cache_key = f"put_assetconfig:{timerange}:{asset}"
-        # cached_data = cache.get(cache_key)
-        # print(cache_key)
-        # if cached_data:
-        #     return jsonify(json.loads(cached_data)), 200
         output = dbService.put_assetconfig(data)
-        # cache.set(cache_key, json.dumps(output), ex=900)
         print("Response /emsadminapi/v1/put_assetconfig")
         LOG.INFO("Response /emsadminapi/v1/put_assetconfig ")
         return output, 200
@@ -225,13 +217,7 @@ def put_assetattributes():
         # temp = json.dumps(dict_data2)
         # data2 = json.loads(temp)
         
-        # cache_key = f"put_assetattributes:{timerange}:{asset}"
-        # cached_data = cache.get(cache_key)
-        # print(cache_key)
-        # if cached_data:
-        #     return jsonify(json.loads(cached_data)), 200
         output = dbService.put_assetattributes(data)
-        # cache.set(cache_key, json.dumps(output), ex=900)
         print("Response /emsadminapi/v1/put_assetattributes")
         LOG.INFO("Response /emsadminapi/v1/put_assetattributes ")
         return output, 200
@@ -248,13 +234,7 @@ def put_shopattributes():
         data = json.loads(temp)
         print(data)
         
-        # cache_key = f"put_shopattributes:{timerange}:{asset}"
-        # cached_data = cache.get(cache_key)
-        # print(cache_key)
-        # if cached_data:
-        #     return jsonify(json.loads(cached_data)), 200
         output = dbService.put_shopattributes(data)
-        # cache.set(cache_key, json.dumps(output), ex=900)
         print("Response /emsadminapi/v1/put_shopattributes")
         LOG.INFO("Response /emsadminapi/v1/put_shopattributes ")
         return output, 200
@@ -271,13 +251,7 @@ def put_assetfaultruleconfig():
         data = json.loads(temp)
         print(data)
         
-        # cache_key = f"put_assetfaultruleconfig:{timerange}:{asset}"
-        # cached_data = cache.get(cache_key)
-        # print(cache_key)
-        # if cached_data:
-        #     return jsonify(json.loads(cached_data)), 200
         output = dbService.put_assetfaultruleconfig(data)
-        # cache.set(cache_key, json.dumps(output), ex=900)
         print("Response /emsadminapi/v1/put_assetfaultruleconfig")
         LOG.INFO("Response /emsadminapi/v1/put_assetfaultruleconfig ")
         return output, 200
@@ -297,13 +271,7 @@ def delete_assetconfig():
         # temp = json.dumps(dict_data2)
         # data2 = json.loads(temp)
         
-        # cache_key = f"delete_assetconfig:{timerange}:{asset}"
-        # cached_data = cache.get(cache_key)
-        # print(cache_key)
-        # if cached_data:
-        #     return jsonify(json.loads(cached_data)), 200
         output = dbService.delete_assetconfig(data)
-        # cache.set(cache_key, json.dumps(output), ex=900)
         print("Response /emsadminapi/v1/delete_assetconfig")
         LOG.INFO("Response /emsadminapi/v1/delete_assetconfig ")
         return output, 200
@@ -323,13 +291,7 @@ def delete_assetattributes():
         # temp = json.dumps(dict_data2)
         # data2 = json.loads(temp)
         
-        # cache_key = f"delete_assetattributes:{timerange}:{asset}"
-        # cached_data = cache.get(cache_key)
-        # print(cache_key)
-        # if cached_data:
-        #     return jsonify(json.loads(cached_data)), 200
         output = dbService.delete_assetattributes(data)
-        # cache.set(cache_key, json.dumps(output), ex=900)
         print("Response /emsadminapi/v1/delete_assetattributes ")
         LOG.INFO("Response /emsadminapi/v1/delete_assetattributes ")
         return output, 200
@@ -349,13 +311,7 @@ def delete_shopattributes():
         # temp = json.dumps(dict_data2)
         # data2 = json.loads(temp)
         
-        # cache_key = f"delete_shopattributes:{timerange}:{asset}"
-        # cached_data = cache.get(cache_key)
-        # print(cache_key)
-        # if cached_data:
-        #     return jsonify(json.loads(cached_data)), 200
         output = dbService.delete_shopattributes(data)
-        # cache.set(cache_key, json.dumps(output), ex=900)
         print("Response /emsadminapi/v1/delete_shopattributes")
         LOG.INFO("Response /emsadminapi/v1/delete_shopattributes ")
         return output, 200
@@ -375,13 +331,7 @@ def delete_assetfaultruleconfig():
         # temp = json.dumps(dict_data2)
         # data2 = json.loads(temp)
         
-        # cache_key = f"delete_assetfaultruleconfig:{timerange}:{asset}"
-        # cached_data = cache.get(cache_key)
-        # print(cache_key)
-        # if cached_data:
-        #     return jsonify(json.loads(cached_data)), 200
         output = dbService.delete_assetfaultruleconfig(data)
-        # cache.set(cache_key, json.dumps(output), ex=900)
         print("Response /emsadminapi/v1/delete_assetfaultruleconfig")
         LOG.INFO("Response /emsadminapi/v1/delete_assetfaultruleconfig ")
         return output, 200

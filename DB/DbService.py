@@ -655,9 +655,9 @@ class DbService:
         
             return self.points
         except Exception as ex:
-            print("\nFailed to write asset attributes details from influx" + str(os.path.basename(__file__)) + str(ex))
+            print("\nFailed to update asset attributes details from influx" + str(os.path.basename(__file__)) + str(ex))
             self.LOG.ERROR(
-                "\nFailed to write asset attributes details from influx" + str(os.path.basename(__file__)) + str(ex))
+                "\nFailed to update asset attributes details from influx" + str(os.path.basename(__file__)) + str(ex))
             pass
 
 
@@ -723,9 +723,9 @@ class DbService:
         
             return self.points
         except Exception as ex:
-            print("\nFailed to write asset attributes details from influx" + str(os.path.basename(__file__)) + str(ex))
+            print("\nFailed to update asset attributes details from influx" + str(os.path.basename(__file__)) + str(ex))
             self.LOG.ERROR(
-                "\nFailed to write asset attributes details from influx" + str(os.path.basename(__file__)) + str(ex))
+                "\nFailed to update asset attributes details from influx" + str(os.path.basename(__file__)) + str(ex))
             pass
 
     def put_assetfaultruleconfig(self, data):
@@ -768,14 +768,13 @@ class DbService:
         
             return self.points
         except Exception as ex:
-            print("\nFailed to write asset fault rule details from influx" + str(os.path.basename(__file__)) + str(ex))
+            print("\nFailed to update asset fault rule details from influx" + str(os.path.basename(__file__)) + str(ex))
             self.LOG.ERROR(
-                "\nFailed to write asset fault rule details from influx" + str(os.path.basename(__file__)) + str(ex))
+                "\nFailed to update asset fault rule details from influx" + str(os.path.basename(__file__)) + str(ex))
             pass
 
     def delete_assetconfig(self, data):
         try:
-            points = self.points
 
             asset_id = data["asset_id"]
             shop_id = data["shop_id"]
@@ -796,8 +795,8 @@ class DbService:
             data_frame.drop(['result', 'table'], axis=1, inplace=True)
             df = pd.DataFrame(data_frame)
             # time = df.get("_time")
-            # time = df.loc[df['asset_id']==asset_id, '_time'].values[0]
-            time = df.loc[0, "_time"]
+            time = df.loc[df['asset_id']==asset_id, '_time'].values[0]
+            # time = df.loc[0, "_time"]
             # print(time)
             # current_time = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
             delete_api= self.client.delete_api()
@@ -865,11 +864,10 @@ class DbService:
             # current_time = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
             delete_api= self.client.delete_api()
             delete_api.delete(start = time, stop=time, predicate='_measurement = "ConfigData"',bucket=self.bucket, org=self.org)
-            return points
         except Exception as ex:
-            print("\nFailed to update asset config details from influx: " + str(os.path.basename(__file__)) + str(ex))
+            print("\nFailed to delete asset config details from influx: " + str(os.path.basename(__file__)) + str(ex))
             self.LOG.ERROR(
-                "\nFailed to update asset config details from influx: " + str(os.path.basename(__file__)) + str(ex))
+                "\nFailed to delete asset config details from influx: " + str(os.path.basename(__file__)) + str(ex))
             pass
 
     def delete_assetattributes(self, data):
@@ -920,9 +918,9 @@ class DbService:
             delete_api.delete(start = time, stop=time, predicate='_measurement = "ConfigData"',bucket=self.bucket, org=self.org)
         
         except Exception as ex:
-            print("\nFailed to write asset attributes details from influx" + str(os.path.basename(__file__)) + str(ex))
+            print("\nFailed to delete asset attributes details from influx" + str(os.path.basename(__file__)) + str(ex))
             self.LOG.ERROR(
-                "\nFailed to write asset attributes details from influx" + str(os.path.basename(__file__)) + str(ex))
+                "\nFailed to delete asset attributes details from influx" + str(os.path.basename(__file__)) + str(ex))
             pass
 
     def delete_shopattributes(self, data):
@@ -973,9 +971,9 @@ class DbService:
             delete_api.delete(start = time, stop=time, predicate='_measurement = "ConfigData"',bucket=self.bucket, org=self.org)
         
         except Exception as ex:
-            print("\nFailed to write asset attributes details from influx" + str(os.path.basename(__file__)) + str(ex))
+            print("\nFailed to delete asset attributes details from influx" + str(os.path.basename(__file__)) + str(ex))
             self.LOG.ERROR(
-                "\nFailed to write asset attributes details from influx" + str(os.path.basename(__file__)) + str(ex))
+                "\nFailed to delete asset attributes details from influx" + str(os.path.basename(__file__)) + str(ex))
             pass
 
     def delete_assetfaultruleconfig(self, data):
@@ -1004,7 +1002,7 @@ class DbService:
             delete_api.delete(start = time, stop=time, predicate='_measurement = "ConfigData"',bucket=self.bucket, org=self.org)
         
         except Exception as ex:
-            print("\nFailed to write asset fault rule details from influx" + str(os.path.basename(__file__)) + str(ex))
+            print("\nFailed to delete asset fault rule details from influx" + str(os.path.basename(__file__)) + str(ex))
             self.LOG.ERROR(
-                "\nFailed to write asset fault rule details from influx" + str(os.path.basename(__file__)) + str(ex))
+                "\nFailed to delete asset fault rule details from influx" + str(os.path.basename(__file__)) + str(ex))
             pass
