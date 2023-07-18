@@ -296,6 +296,7 @@ class DbService:
                                                      alert: r.alert, action: r.action}),
                                  )
                     '''
+            
             # print("\n Querying for getConfigData\n")
             # print(str(query))
             data_frame = self.query_api.query_data_frame(query)
@@ -328,16 +329,15 @@ class DbService:
                           |> range(start: 0)
                           |> filter(fn: (r) => r["_measurement"] == "ConfigData" and r["Tag1"] == "Asset" and r["Table"] == "AssetMLModelOp")
                           |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
-                          |> keep(columns: ["std_dev", "asset_id", "mean","type"])   
+                          |> keep(columns: ["std_dev", "asset_id", "mean", "type"])   
 
-                        a=join.inner(
+                        join.inner(
                                     left: l ,
                                     right: r,
                                     on: (l, r) => l.asset_id == r.asset_id,
                                     as: (l, r) => ({l with std_dev: r.std_dev,
-                                                    l with mean: r.mean,
-                                                    l with type: r.type}),
-                                                    
+                                                    mean: r.mean,
+                                                    type: r.type}),           
                                  ) 
                     '''
             # print("\n Querying for getConfigData\n")
@@ -409,7 +409,7 @@ class DbService:
             point.field("synced", int(0))
             print(point)
             self.points.append(point)
-
+            
             self.write_api.write(bucket=self.bucket, org=self.org, record= self.points)
             return "Insertion successful"
             
@@ -439,11 +439,10 @@ class DbService:
                         |> count(column: "attribute_name")                                           
                     '''
             data_frame = self.query_api.query_data_frame(query)
-            data_frame.drop(['result', 'table'], axis=1, inplace=True)
-            df = pd.DataFrame(data_frame)
-            count = df.loc[0, "attribute_name"]
-            print(count)
-            if(count <= 0):
+            # print(data_frame)
+            check = len(data_frame)
+            # print(check)
+            if(check==0):
                 point = Point("ConfigData")
                 point.measurement("ConfigData")
                 point.tag("Table", "AssetAttributes")
@@ -474,17 +473,12 @@ class DbService:
                         |> count(column: "assetattribute_id")                                           
                     '''
             data_frame = self.query_api.query_data_frame(query1)
-            data_frame.drop(['result', 'table'], axis=1, inplace=True)
-            df = pd.DataFrame(data_frame)
-            count1 = df.loc[0, "asset_id"]
+            check1 = len(data_frame)
 
             data_frame = self.query_api.query_data_frame(query2)
-            data_frame.drop(['result', 'table'], axis=1, inplace=True)
-            df = pd.DataFrame(data_frame)
-            count2 = df.loc[0, "assetattribute_id"]
-            print(count1, count2)
+            check2 = len(data_frame)
 
-            if((count1 <= 0) or (count2 <= 0)):
+            if((check1 == 0) or (check2 == 0)):
                 point = Point("ConfigData")
                 point.measurement("ConfigData")
                 point.tag("Table", "AssetAttributeMapping")
@@ -505,11 +499,8 @@ class DbService:
                         |> count(column: "asset_name")                                           
                     '''
             data_frame = self.query_api.query_data_frame(query)
-            data_frame.drop(['result', 'table'], axis=1, inplace=True)
-            df = pd.DataFrame(data_frame)
-            count = df.loc[0, "asset_name"]
-            print(count)
-            if(count <= 0):
+            check = len(data_frame)
+            if(check == 0):
                 point = Point("ConfigData")
                 point.measurement("ConfigData")
                 point.tag("Table", "AssetConfig")
@@ -550,11 +541,8 @@ class DbService:
                         |> count(column: "attribute_name")                                           
                     '''
             data_frame = self.query_api.query_data_frame(query)
-            data_frame.drop(['result', 'table'], axis=1, inplace=True)
-            df = pd.DataFrame(data_frame)
-            count = df.loc[0, "attribute_name"]
-            print(count)
-            if(count <= 0):
+            check = len(data_frame)
+            if(check == 0):
                 point = Point("ConfigData")
                 point.measurement("ConfigData")
                 point.tag("Table", "ShopAttributes")
@@ -585,17 +573,12 @@ class DbService:
                         |> count(column: "shopattribute_id")                                           
                     '''
             data_frame = self.query_api.query_data_frame(query1)
-            data_frame.drop(['result', 'table'], axis=1, inplace=True)
-            df = pd.DataFrame(data_frame)
-            count1 = df.loc[0, "shop_id"]
+            check1 = len(data_frame)
 
             data_frame = self.query_api.query_data_frame(query2)
-            data_frame.drop(['result', 'table'], axis=1, inplace=True)
-            df = pd.DataFrame(data_frame)
-            count2 = df.loc[0, "shopattribute_id"]
-            print(count1, count2)
+            check2 = len(data_frame)
 
-            if((count1 <= 0) or (count2 <= 0)):
+            if((check1 <= 0) or (check2 <= 0)):
                 point = Point("ConfigData")
                 point.measurement("ConfigData")
                 point.tag("Table", "ShopAttributeMapping")
@@ -616,11 +599,8 @@ class DbService:
                         |> count(column: "shop_name")                                           
                     '''
             data_frame = self.query_api.query_data_frame(query)
-            data_frame.drop(['result', 'table'], axis=1, inplace=True)
-            df = pd.DataFrame(data_frame)
-            count = df.loc[0, "shop_name"]
-            print(count)
-            if(count <= 0):
+            check = len(data_frame)
+            if(check == 0):
                 point = Point("ConfigData")
                 point.measurement("ConfigData")
                 point.tag("Table", "ShopConfig")
@@ -662,11 +642,8 @@ class DbService:
                         |> count(column: "asset_name")                                           
                     '''
             data_frame = self.query_api.query_data_frame(query)
-            data_frame.drop(['result', 'table'], axis=1, inplace=True)
-            df = pd.DataFrame(data_frame)
-            count = df.loc[0, "asset_name"]
-            print(count)
-            if(count <= 0):
+            check = len(data_frame)
+            if(check == 0):
                 point = Point("ConfigData")
                 point.measurement("ConfigData")
                 point.tag("Table", "AssetConfig")
@@ -697,17 +674,12 @@ class DbService:
                         |> count(column: "rule_id")                                           
                     '''
             data_frame = self.query_api.query_data_frame(query1)
-            data_frame.drop(['result', 'table'], axis=1, inplace=True)
-            df = pd.DataFrame(data_frame)
-            count1 = df.loc[0, "asset_id"]
+            check1 = len(data_frame)
 
             data_frame = self.query_api.query_data_frame(query2)
-            data_frame.drop(['result', 'table'], axis=1, inplace=True)
-            df = pd.DataFrame(data_frame)
-            count2 = df.loc[0, "rule_id"]
-            print(count1, count2)
+            check2 = len(data_frame)
 
-            if((count1 <= 0) or (count2 <= 0)):
+            if((check1 <= 0) or (check2 <= 0)):
                 point = Point("ConfigData")
                 point.measurement("ConfigData")
                 point.tag("Table", "AssetRuleMapping")
@@ -728,11 +700,8 @@ class DbService:
                         |> count(column: "rule_id")                                           
                     '''
             data_frame = self.query_api.query_data_frame(query)
-            data_frame.drop(['result', 'table'], axis=1, inplace=True)
-            df = pd.DataFrame(data_frame)
-            count = df.loc[0, "rule_id"]
-            print(count)
-            if(count <= 0):
+            check = len(data_frame)
+            if(check == 0):
                 point = Point("ConfigData")
                 point.measurement("ConfigData")
                 point.tag("Table", "AssetAlertRules")
