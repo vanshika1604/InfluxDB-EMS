@@ -97,6 +97,24 @@ def get_assetfaultruleconfig():
         print("Exception /emsadminapi/v1/get_assetfaultruleconfig: " + str(ex))
         LOG.ERROR("Exception /emsadminapi/v1/get_assetfaultruleconfig " + str(ex))
         return ex
+    
+@app.route('/emsadminapi/v1/get_assetmlconfig', methods=['GET'])
+def get_assetmlconfig():
+    try:
+        cache_key = "get_assetmlconfig"
+        cached_data = cache.get(cache_key)
+        print(cache_key)
+        if cached_data:
+            return jsonify(json.loads(cached_data)), 200
+        output = dbService.get_assetmlconfig()
+        cache.set(cache_key, json.dumps(output), ex=900)
+        print("Response /emsadminapi/v1/get_assetmlconfig ")
+        LOG.INFO("Response /emsadminapi/v1/get_assetmlconfig ")
+        return jsonify(output), 200
+    except Exception as ex:
+        print("Exception /emsadminapi/v1/get_assetmlconfig" + str(ex))
+        LOG.ERROR("Exception /emsadminapi/v1/get_assetmlconfig: " + str(ex))
+        return ex
 
 @app.route('/emsadminapi/v1/post_assetconfig', methods=['POST'])
 def post_assetconfig():
@@ -339,7 +357,8 @@ def delete_assetfaultruleconfig():
         print("Exception /emsadminapi/v1/delete_assetfaultruleconfig" + str(ex))
         LOG.ERROR("Exception /emsadminapi/v1/delete_assetfaultruleconfig: " + str(ex))
         return ex
-    
+        
 if __name__ == '__main__':
     serve(app, host="localhost", port=3005)
+
 
