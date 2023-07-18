@@ -422,7 +422,7 @@ class DbService:
 
     def post_assetattributes(self, data):
         try:
-            # self.points = []
+            self.points = []
             asset_name = data["asset_name"]
             attribute_name = data["attribute_name"]
             assetattribute_id = str(uuid.uuid4())
@@ -441,7 +441,7 @@ class DbService:
             data_frame = self.query_api.query_data_frame(query)
             # print(data_frame)
             check = len(data_frame)
-            # print(check)
+            print(check)
             if(check==0):
                 point = Point("ConfigData")
                 point.measurement("ConfigData")
@@ -453,32 +453,47 @@ class DbService:
                 self.points.append(point)
 
                 #Using Asset Attribute Mapping
-                query1 = '''from(bucket: \"''' + self.bucket + '''\")
-                        |> range(start: 0)
-                        |> filter(fn: (r) => r["_measurement"] == "ConfigData")
-                        |> filter(fn: (r) => r["Table"] == "AssetAttributeMapping")
-                        |> filter(fn: (r) => r["Tag1"] == "Asset")
-                        |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
-                        |> filter(fn: (r) => r["asset_id"] == \"''' + asset_id + '''\")
-                        |> count(column: "asset_id")                                           
+                query = '''
+                        import "join"
+
+                         l = from(bucket: \"''' + self.bucket + '''\")
+                          |> range(start: 0)
+                          |> filter(fn: (r) => r["_measurement"] == "ConfigData" and r["Tag1"] == "Asset" and r["Table"] == "AssetConfig")
+                          |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+                          |> keep(columns: ["asset_name", "asset_id"])
+  
+                         r = from(bucket: \"''' + self.bucket + '''\")
+                          |> range(start: 0)
+                          |> filter(fn: (r) => r["_measurement"] == "ConfigData" and r["Tag1"] == "Asset" and r["Table"] == "AssetAttributeMapping")
+                          |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+                          |> keep(columns: ["assetattribute_id", "asset_id"])   
+
+                        a=join.inner(
+                                    left: l ,
+                                    right: r,
+                                    on: (l, r) => l.asset_id == r.asset_id,
+                                    as: (l, r) => ({l with assetattribute_id: r.assetattribute_id}),
+                                 ) 
+
+                         b = from(bucket: \"''' + self.bucket + '''\")
+                           |> range(start: 0)
+                           |> filter(fn: (r) => r["_measurement"] == "ConfigData" and r["Tag1"] == "Asset" and r["Table"] == "AssetAttributes")               
+                           |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+                           |> keep(columns: ["assetattribute_id","attribute_name"]) 
+                         
+                         join.inner(
+                                     left: a ,
+                                     right: b,
+                                     on: (l, r) => l.assetattribute_id == r.assetattribute_id,
+                                     as: (l, r) => ({l with attribute_name: r.attribute_name}),
+                                 )   
+                            |> filter(fn: (r) => r["asset_id"] == \"''' + asset_id + '''\" or r["assetattribute_id"] == \"''' + assetattribute_id + '''\")  
                     '''
 
-                query2 = '''from(bucket: \"''' + self.bucket + '''\")
-                        |> range(start: 0)
-                        |> filter(fn: (r) => r["_measurement"] == "ConfigData")
-                        |> filter(fn: (r) => r["Table"] == "AssetAttributeMapping")
-                        |> filter(fn: (r) => r["Tag1"] == "Asset")
-                        |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
-                        |> filter(fn: (r) => r["assetattribute_id"] == \"''' + assetattribute_id + '''\")
-                        |> count(column: "assetattribute_id")                                           
-                    '''
-            data_frame = self.query_api.query_data_frame(query1)
-            check1 = len(data_frame)
+                data_frame = self.query_api.query_data_frame(query)
+                check = len(data_frame)
 
-            data_frame = self.query_api.query_data_frame(query2)
-            check2 = len(data_frame)
-
-            if((check1 == 0) or (check2 == 0)):
+            if(check==0):
                 point = Point("ConfigData")
                 point.measurement("ConfigData")
                 point.tag("Table", "AssetAttributeMapping")
@@ -514,7 +529,7 @@ class DbService:
                 return "Insertion successful"
         
             else:
-                print("You are trying to insert duplicate values.")
+                return "You are trying to insert duplicate values."
         except Exception as ex:
             print("\nFailed to write asset attributes details from influx" + str(os.path.basename(__file__)) + str(ex))
             self.LOG.ERROR(
@@ -524,7 +539,7 @@ class DbService:
 
     def post_shopattributes(self, data):
         try:
-            # self.points = []
+            self.points = []
             shop_name = data["shop_name"]
             attribute_name = data["attribute_name"]
             shopattribute_id = str(uuid.uuid4())
@@ -553,32 +568,49 @@ class DbService:
                 self.points.append(point)
 
                 #Using Shop Attribute Mapping
-                query1 = '''from(bucket: \"''' + self.bucket + '''\")
-                        |> range(start: 0)
-                        |> filter(fn: (r) => r["_measurement"] == "ConfigData")
-                        |> filter(fn: (r) => r["Table"] == "ShopAttributeMapping")
-                        |> filter(fn: (r) => r["Tag1"] == "Shop")
-                        |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
-                        |> filter(fn: (r) => r["shop_id"] == \"''' + shop_id + '''\")
-                        |> count(column: "shop_id")                                           
+                query = '''
+                        import "join"
+
+                         l = from(bucket: \"''' + self.bucket + '''\")
+                          |> range(start: 0)
+                          |> filter(fn: (r) => r["_measurement"] == "ConfigData" and r["Tag1"] == "Shop" and r["Table"] == "ShopConfig")
+                          |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+                          |> keep(columns: ["shop_name", "shop_id"])
+  
+                         r = from(bucket: \"''' + self.bucket + '''\")
+                          |> range(start: 0)
+                          |> filter(fn: (r) => r["_measurement"] == "ConfigData" and r["Tag1"] == "Shop" and r["Table"] == "ShopAttributeMapping")
+                          |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+                          |> keep(columns: ["shopattribute_id", "shop_id"])   
+
+                        a=join.inner(
+                                    left: l ,
+                                    right: r,
+                                    on: (l, r) => l.shop_id == r.shop_id,
+                                    as: (l, r) => ({l with shop_id: r.shop_id,
+                                                    shopattribute_id: r.shopattribute_id}),
+                                 ) 
+
+                         b = from(bucket: \"''' + self.bucket + '''\")
+                           |> range(start: 0)
+                           |> filter(fn: (r) => r["_measurement"] == "ConfigData" and r["Tag1"] == "Shop" and r["Table"] == "ShopAttributes")                  
+                           |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+                           |> keep(columns: ["shopattribute_id","attribute_name"]) 
+                         
+                           
+                         join.inner(
+                                     left: a ,
+                                     right: b,
+                                     on: (l, r) => l.shopattribute_id == r.shopattribute_id,
+                                     as: (l, r) => ({l with shopattribute_id: r.shopattribute_id ,
+                                                     attribute_name: r.attribute_name}),
+                                 )
+                        |> filter(fn: (r) => r["shop_id"] == \"''' + shop_id + '''\" or r["shopattribute_id"] == \"''' + shopattribute_id + '''\")  
                     '''
+                
+                data_frame = self.query_api.query_data_frame(query)
 
-                query2 = '''from(bucket: \"''' + self.bucket + '''\")
-                        |> range(start: 0)
-                        |> filter(fn: (r) => r["_measurement"] == "ConfigData")
-                        |> filter(fn: (r) => r["Table"] == "ShopAttributeMapping")
-                        |> filter(fn: (r) => r["Tag1"] == "Shop")
-                        |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
-                        |> filter(fn: (r) => r["shopattribute_id"] == \"''' + shopattribute_id + '''\")
-                        |> count(column: "shopattribute_id")                                           
-                    '''
-            data_frame = self.query_api.query_data_frame(query1)
-            check1 = len(data_frame)
-
-            data_frame = self.query_api.query_data_frame(query2)
-            check2 = len(data_frame)
-
-            if((check1 <= 0) or (check2 <= 0)):
+            if(check == 0):
                 point = Point("ConfigData")
                 point.measurement("ConfigData")
                 point.tag("Table", "ShopAttributeMapping")
@@ -614,7 +646,7 @@ class DbService:
                 return "Insertion successful"
         
             else:
-                print("You are trying to insert duplicate values.")
+                return "You are trying to insert duplicate values."
         except Exception as ex:
             print("\nFailed to write shop attributes details from influx" + str(os.path.basename(__file__)) + str(ex))
             self.LOG.ERROR(
@@ -654,32 +686,50 @@ class DbService:
                 self.points.append(point)
 
             #Using Asset Rule Mapping
-            query1 = '''from(bucket: \"''' + self.bucket + '''\")
-                        |> range(start: 0)
-                        |> filter(fn: (r) => r["_measurement"] == "ConfigData")
-                        |> filter(fn: (r) => r["Table"] == "AssetRuleMapping")
-                        |> filter(fn: (r) => r["Tag1"] == "Asset")
-                        |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
-                        |> filter(fn: (r) => r["asset_id"] == \"''' + asset_id + '''\")
-                        |> count(column: "asset_id")                                           
+            query = '''
+                        import "join"
+
+                         l = from(bucket: \"''' + self.bucket + '''\")
+                          |> range(start: 0)
+                          |> filter(fn: (r) => r["_measurement"] == "ConfigData" and r["Tag1"] == "Asset" and r["Table"] == "AssetConfig")
+                          |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+                          |> keep(columns: ["asset_name", "asset_id"])
+  
+                         r = from(bucket: \"''' + self.bucket + '''\")
+                          |> range(start: 0)
+                          |> filter(fn: (r) => r["_measurement"] == "ConfigData" and r["Tag1"] == "Asset" and r["Table"] == "AssetRuleMapping")
+                          |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+                          |> keep(columns: ["asset_id", "rule_id"])   
+
+                        a= join.inner(
+                                    left: l ,
+                                    right: r,
+                                    on: (l, r) => l.asset_id == r.asset_id,
+                                    as: (l, r) => ({l with asset_id: r.asset_id,
+                                                    rule_id: r.rule_id}),
+                                 ) 
+
+                         b = from(bucket: \"''' + self.bucket + '''\")
+                           |> range(start: 0)
+                           |> filter(fn: (r) => r["_measurement"] == "ConfigData" and r["Tag1"] == "Asset" and r["Table"] == "AssetAlertRules")              
+                           |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+                           |> keep(columns: ["condition","alert","action","rule_id"]) 
+                         
+                           
+                         join.inner(
+                                     left: a ,
+                                     right: b,
+                                     on: (l, r) => l.rule_id == r.rule_id,
+                                     as: (l, r) => ({l with condition: r.condition ,
+                                                     alert: r.alert, action: r.action}),
+                                 )
+                                 |> filter(fn: (r) => r["rule_id"] == \"''' + rule_id + '''\")  
                     '''
 
-            query2 = '''from(bucket: \"''' + self.bucket + '''\")
-                        |> range(start: 0)
-                        |> filter(fn: (r) => r["_measurement"] == "ConfigData")
-                        |> filter(fn: (r) => r["Table"] == "AssetRuleMapping")
-                        |> filter(fn: (r) => r["Tag1"] == "Asset")
-                        |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
-                        |> filter(fn: (r) => r["rule_id"] == \"''' + rule_id + '''\")
-                        |> count(column: "rule_id")                                           
-                    '''
-            data_frame = self.query_api.query_data_frame(query1)
-            check1 = len(data_frame)
+            data_frame = self.query_api.query_data_frame(query)
+            check = len(data_frame)
 
-            data_frame = self.query_api.query_data_frame(query2)
-            check2 = len(data_frame)
-
-            if((check1 <= 0) or (check2 <= 0)):
+            if(check == 0):
                 point = Point("ConfigData")
                 point.measurement("ConfigData")
                 point.tag("Table", "AssetRuleMapping")
