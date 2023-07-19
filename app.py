@@ -53,7 +53,7 @@ def get_assetattributes():
         if cached_data:
             return jsonify(json.loads(cached_data)), 200
         output = dbService.get_assetattributes()
-        cache.set(cache_key, json.dumps(output), ex=900)
+        cache.set(cache_key, json.dumps(output), ex=10)
         print("Response /emsadminapi/v1/get_assetattributes ")
         LOG.INFO("Response /emsadminapi/v1/get_assetattributes ")
         return jsonify(output), 200
@@ -114,6 +114,24 @@ def get_assetmlconfig():
     except Exception as ex:
         print("Exception /emsadminapi/v1/get_assetmlconfig" + str(ex))
         LOG.ERROR("Exception /emsadminapi/v1/get_assetmlconfig: " + str(ex))
+        return ex
+
+@app.route('/emsadminapi/v1/get_shopmlconfig', methods=['GET'])
+def get_shopmlconfig():
+    try:
+        cache_key = "get_shopmlconfig"
+        cached_data = cache.get(cache_key)
+        print(cache_key)
+        if cached_data:
+            return jsonify(json.loads(cached_data)), 200
+        output = dbService.get_shopmlconfig()
+        cache.set(cache_key, json.dumps(output), ex=900)
+        print("Response /emsadminapi/v1/get_shopmlconfig ")
+        LOG.INFO("Response /emsadminapi/v1/get_shopmlconfig ")
+        return jsonify(output), 200
+    except Exception as ex:
+        print("Exception /emsadminapi/v1/get_shopmlconfig" + str(ex))
+        LOG.ERROR("Exception /emsadminapi/v1/get_shopmlconfig: " + str(ex))
         return ex
 
 @app.route('/emsadminapi/v1/post_assetconfig', methods=['POST'])
@@ -202,6 +220,28 @@ def post_assetfaultruleconfig():
     except Exception as ex:
         print("Exception /emsadminapi/v1/post_assetfaultruleconfig" + str(ex))
         LOG.ERROR("Exception /emsadminapi/v1/post_assetfaultruleconfig: " + str(ex))
+        return ex
+
+@app.route('/emsadminapi/v1/post_assetmlconfig', methods=['POST'])
+def post_assetenablemlconfig():
+    try:
+        dict_data = request.get_json()
+        temp = json.dumps(dict_data)
+        data = json.loads(temp)
+        # cache_key = "post_assetenablemlconfig"
+        # cached_data = cache.get(cache_key)
+        # print(cache_key)
+        # if cached_data:
+        #     return jsonify(json.loads(cached_data)), 200
+       
+        output = dbService.post_assetenablemlconfig(data)
+        # cache.set(cache_key, json.dumps(output), ex=900)
+        print("Response /emsadminapi/v1/post_assetenablemlconfig ")
+        LOG.INFO("Response /emsadminapi/v1/post_assetenablemlconfig ")
+        return output, 200
+    except Exception as ex:
+        print("Exception /emsadminapi/v1/post_assetenablemlconfig" + str(ex))
+        LOG.ERROR("Exception /emsadminapi/v1/post_assetenablemlconfig: " + str(ex))
         return ex
 
 @app.route('/emsadminapi/v1/put_assetconfig', methods=['PUT'])
