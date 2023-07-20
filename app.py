@@ -34,7 +34,7 @@ def get_assetconfig():
         if cached_data:
             return jsonify(json.loads(cached_data)), 200
         output = dbService.get_assetconfig()
-        cache.set(cache_key, json.dumps(output), ex=900)
+        cache.set(cache_key, json.dumps(output), ex=5)
         print("Response /emsadminapi/v1/get_assetconfig ")
         LOG.INFO("Response /emsadminapi/v1/get_assetconfig ")
         return jsonify(output), 200
@@ -53,7 +53,7 @@ def get_assetattributes():
         if cached_data:
             return jsonify(json.loads(cached_data)), 200
         output = dbService.get_assetattributes()
-        cache.set(cache_key, json.dumps(output), ex=10)
+        cache.set(cache_key, json.dumps(output), ex=5)
         print("Response /emsadminapi/v1/get_assetattributes ")
         LOG.INFO("Response /emsadminapi/v1/get_assetattributes ")
         return jsonify(output), 200
@@ -71,7 +71,7 @@ def get_shopattributes():
         if cached_data:
             return jsonify(json.loads(cached_data)), 200
         output = dbService.get_shopattributes()
-        cache.set(cache_key, json.dumps(output), ex=900)
+        cache.set(cache_key, json.dumps(output), ex=5)
         print("Response /emsadminapi/v1/get_shopattributes ")
         LOG.INFO("Response /emsadminapi/v1/get_shopattributes ")
         return jsonify(output), 200
@@ -89,7 +89,7 @@ def get_assetfaultruleconfig():
         if cached_data:
             return jsonify(json.loads(cached_data)), 200
         output = dbService.get_assetfaultruleconfig()
-        cache.set(cache_key, json.dumps(output), ex=900)
+        cache.set(cache_key, json.dumps(output), ex=5)
         print("Response /emsadminapi/v1/get_assetfaultruleconfig ")
         LOG.INFO("Response /emsadminapi/v1/get_assetfaultruleconfig ")
         return jsonify(output), 200
@@ -107,7 +107,7 @@ def get_assetmlconfig():
         if cached_data:
             return jsonify(json.loads(cached_data)), 200
         output = dbService.get_assetmlconfig()
-        cache.set(cache_key, json.dumps(output), ex=900)
+        cache.set(cache_key, json.dumps(output), ex=5)
         print("Response /emsadminapi/v1/get_assetmlconfig ")
         LOG.INFO("Response /emsadminapi/v1/get_assetmlconfig ")
         return jsonify(output), 200
@@ -125,7 +125,7 @@ def get_shopmlconfig():
         if cached_data:
             return jsonify(json.loads(cached_data)), 200
         output = dbService.get_shopmlconfig()
-        cache.set(cache_key, json.dumps(output), ex=900)
+        cache.set(cache_key, json.dumps(output), ex=5)
         print("Response /emsadminapi/v1/get_shopmlconfig ")
         LOG.INFO("Response /emsadminapi/v1/get_shopmlconfig ")
         return jsonify(output), 200

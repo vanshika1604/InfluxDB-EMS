@@ -1,6 +1,7 @@
 import json
 import uuid
 import influxdb
+from numpy import double
 import pandas as pd
 import pytz
 from CFG.ConfigHandler import ConfigHandler
@@ -219,24 +220,21 @@ class DbService:
                                     left: l ,
                                     right: r,
                                     on: (l, r) => l.shop_id == r.shop_id,
-                                    as: (l, r) => ({l with shop_id: r.shop_id,
-                                                    shopattribute_id: r.shopattribute_id}),
+                                    as: (l, r) => ({l with shopattribute_id: r.shopattribute_id}),
                                  ) 
 
                          b = from(bucket: \"''' + self.bucket + '''\")
                            |> range(start: 0)
-                           |> filter(fn: (r) => r["_measurement"] == "ConfigData" and r["Tag1"] == "Shop" and r["Table"] == "ShopAttributes")                  
+                           |> filter(fn: (r) => r["_measurement"] == "ConfigData" and r["Tag1"] == "Shop" and r["Table"] == "ShopAttributes")               
                            |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
                            |> keep(columns: ["shopattribute_id","attribute_name"]) 
                          
-                           
                          join.inner(
                                      left: a ,
                                      right: b,
                                      on: (l, r) => l.shopattribute_id == r.shopattribute_id,
-                                     as: (l, r) => ({l with shopattribute_id: r.shopattribute_id ,
-                                                     attribute_name: r.attribute_name}),
-                                 )
+                                     as: (l, r) => ({l with attribute_name: r.attribute_name}),
+                                 )   
                     '''
             # print("\n Querying for getConfigData\n")
             # print(str(query))
@@ -592,7 +590,6 @@ class DbService:
             shop_name = data["shop_name"]
             attribute_name = data["attribute_name"]
             shopattribute_id = str(uuid.uuid4())
-            print(shopattribute_id)
 
             #Getting shop id from the shop name from ShopConfig
             query = '''from(bucket: \"''' + self.bucket + '''\")
@@ -614,7 +611,6 @@ class DbService:
                 df = pd.DataFrame(data_frame)
                 shop_id = df.loc[df['shop_name']==shop_name, 'shop_id'].values[0]
                 
-            print(shop_id)
             # Checking and Writing the attribute name from ShopAttributes
             query = '''from(bucket: \"''' + self.bucket + '''\")
                         |> range(start: 0)
@@ -636,22 +632,22 @@ class DbService:
                 point.field("shopattribute_id", shopattribute_id)
                 point.field("synced", int(0))
                 self.points.append(point)    
-                print(self.points)
+
                 self.write_api.write(bucket=self.bucket, org=self.org, record=self.points)
             else:
                 data_frame.drop(['result', 'table'], axis=1, inplace=True)
                 df = pd.DataFrame(data_frame)
                 shopattribute_id = df.loc[df['attribute_name']==attribute_name, 'shopattribute_id'].values[0]
-                print(shopattribute_id)
+                # print(shopattribute_id)
             
             #Using Shop Attribute Mapping
             query = '''from(bucket: \"''' + self.bucket + '''\")
                         |> range(start: 0)
                         |> filter(fn: (r) => r["_measurement"] == "ConfigData")
-                        |> filter(fn: (r) => r["Table"] == "AssetAttributeMapping")
-                        |> filter(fn: (r) => r["Tag1"] == "Asset")
+                        |> filter(fn: (r) => r["Table"] == "ShopAttributeMapping")
+                        |> filter(fn: (r) => r["Tag1"] == "Shop")
                         |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value") 
-                        |> filter(fn: (r) => r["asset_id"] == \"''' + shop_id + '''\" and r["assetattribute_id"] == \"''' + shopattribute_id + '''\")  
+                        |> filter(fn: (r) => r["shop_id"] == \"''' + shop_id + '''\" and r["shopattribute_id"] == \"''' + shopattribute_id + '''\")  
                     '''
             print(query)
             data_frame = self.query_api.query_data_frame(query)
@@ -664,9 +660,12 @@ class DbService:
                 point.field("shop_id", shop_id)
                 point.field("shopattribute_id", shopattribute_id)
                 point.field("synced", int(0))
+                print(point)
                 self.points.append(point)
+                print(self.points)
                 self.write_api.write(bucket=self.bucket, org=self.org, record=self.points)
                 return "Insertion successful."
+            
             else:
                 return "You are trying to insert duplicate values."
         
@@ -694,7 +693,7 @@ class DbService:
                         |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
                         |> filter(fn: (r) => r["asset_name"] == \"''' + asset_name + '''\")                                        
                     '''
-            
+            print(query)
             data_frame = self.query_api.query_data_frame(query)
             check = len(data_frame)
             print(check)
@@ -714,6 +713,8 @@ class DbService:
                         |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
                         |> filter(fn: (r) => r["condition"] == \"''' + condition + '''\" and r["alert"] == \"''' + alert + '''\" and r["action"] == \"''' + action + '''\" )                                      
                     '''
+            
+            print(query)
             data_frame = self.query_api.query_data_frame(query)
             check = len(data_frame)
             print(check)
@@ -725,11 +726,13 @@ class DbService:
                 point.field("alert", alert)
                 point.field("action", action)
                 point.field("rule_id", rule_id)
+                point.field("consecutive", "false")
+                point.field("delay", int(0))
                 point.field("synced", int(0))
                 
                 self.points.append(point)    
-
                 self.write_api.write(bucket=self.bucket, org=self.org, record=self.points)
+
             else:
                 data_frame.drop(['result', 'table'], axis=1, inplace=True)
                 df = pd.DataFrame(data_frame)
@@ -746,6 +749,7 @@ class DbService:
                         |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value") 
                         |> filter(fn: (r) => r["rule_id"] == \"''' + rule_id + '''\")  
                     '''
+            print(query)
             data_frame = self.query_api.query_data_frame(query)
             check = len(data_frame)
             print(check)
@@ -757,6 +761,7 @@ class DbService:
                 point.field("rule_id", rule_id)
                 point.field("synced", int(0))
                 self.points.append(point)
+
                 self.write_api.write(bucket=self.bucket, org=self.org, record=self.points)
                 return "Insertion successful."
             else:
@@ -771,6 +776,7 @@ class DbService:
         try:
             self.points = []
             asset_name = data["asset_name"]
+            model = data["model"]
             asset_id = str(uuid.uuid4())
 
             #Getting asset id from the asset name from AssetConfig
@@ -793,32 +799,18 @@ class DbService:
                 df = pd.DataFrame(data_frame)
                 asset_id = df.loc[df['asset_name']==asset_name, 'asset_id'].values[0]
 
-            #Check whether model is present or not
-            query = '''from(bucket: \"''' + self.bucket + '''\")
-                        |> range(start: 0)
-                        |> filter(fn: (r) => r["_measurement"] == "ConfigData")
-                        |> filter(fn: (r) => r["Table"] == "AssetMLModelConfig")
-                        |> filter(fn: (r) => r["Tag1"] == "Asset")
-                        |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
-                        |> filter(fn: (r) => r["model"] ==  "yes" )                                     
-                    '''
-                
-            data_frame = self.query_api.query_data_frame(query)
-            check = len(data_frame)
-            print(check)
-
             #If model is not present
-            if(check == 0):
+            if(model == "no"):
                 upper_limit = data["upper_limit"]
                 lower_limit = data["lower_limit"]
                 type = data["type"]
                 query = '''from(bucket: \"''' + self.bucket + '''\")
                         |> range(start: 0)
                         |> filter(fn: (r) => r["_measurement"] == "ConfigData")
-                        |> filter(fn: (r) => r["Table"] == "AssetConfig")
+                        |> filter(fn: (r) => r["Table"] == "AssetMLModelOp")
                         |> filter(fn: (r) => r["Tag1"] == "Asset")
                         |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
-                        |> filter(fn: (r) => r["upper_limit"] == \"''' + upper_limit + '''\" and r["lower_limit"] == \"''' + lower_limit + '''\" and r["type"] == \"''' + type + '''\" )                                     
+                        |> filter(fn: (r) => r["upper_limit"] == ''' + str(upper_limit) + ''' and r["lower_limit"] == ''' + str(lower_limit) + ''' and r["type"] == \"''' + type + '''\" )                                     
                     '''
                 data_frame = self.query_api.query_data_frame(query)
                 check = len(data_frame)
@@ -826,34 +818,48 @@ class DbService:
 
                 # If unique values are provided, write points to table
                 if(check == 0):
+
+                    # Write model = no against newly formed asset_id in ML model config
+                    self.points = []
                     point = Point("ConfigData")
-                    point.measurement("ConfigData")
                     point.tag("Table", "AssetMLModelConfig")
+                    point.tag("Tag1", "Asset")
+                    point.field("asset_id", asset_id)
+                    point.field("model", "no")
+                    self.points.append(point)
+                    self.write_api.write(bucket=self.bucket, org=self.org, record=self.points)
+
+                    #Write asset_id, type, upper_limit and lower_limit in ML model Op
+                    self.points = []
+                    point = Point("ConfigData")
+                    point.tag("Table", "AssetMLModelOp")
                     point.tag("Tag1", "Asset")
                     point.field("upper_limit", upper_limit)
                     point.field("lower_limit", lower_limit)
                     point.field("type", type)
                     point.field("asset_id", asset_id)
                     point.field("mean", int(0))
-                    point.field("range_end", int(0))
-                    point.field("range_start", int(0))
+                    # point.field("range_end", int(0))
+                    # point.field("range_start", int(0))
                     point.field("std_dev", int(0))
                     point.field("synced", int(0))
                     self.points.append(point)
+                    self.write_api.write(bucket=self.bucket, org=self.org, record=self.points)
+
                     return "Insertion successful"
                 else:
                     return "You are trying to insert duplicate values."
                     
             # If model is present
-            else:
+            elif(model == "yes"):
                 #Checking and writing ml_attributes and model_path from AssetMLModelConfig
-                ml_attributes = data["ml_attributes"]
                 model_path = data["model_path"]
                 type = data["type"]
                 std_dev = data["std_dev"]
                 mean = data["mean"]
 
-                asset_id = uuid.uuid4()
+                mean = float(mean)
+                std_dev = float(std_dev)
 
                 query = '''from(bucket: \"''' + self.bucket + '''\")
                         |> range(start: 0)
@@ -861,9 +867,8 @@ class DbService:
                         |> filter(fn: (r) => r["Table"] == "AssetMLModelConfig")
                         |> filter(fn: (r) => r["Tag1"] == "Asset")
                         |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
-                        |> filter(fn: (r) => r["ml_attributes"] == \"''' + ml_attributes + '''\" and r["model_path"] == \"''' + model_path + '''\")                                     
+                        |> filter(fn: (r) => r["model_path"] == \"''' + model_path + '''\")                                     
                     '''
-                
                 data_frame = self.query_api.query_data_frame(query)
                 check = len(data_frame)
                 print(check)
@@ -874,38 +879,25 @@ class DbService:
                     point.measurement("ConfigData")
                     point.tag("Table", "AssetMLModelConfig")
                     point.tag("Tag1", "Asset")
-                    point.field("ml_attributes", ml_attributes)
+                    point.field("ml_attributes", "[]")
                     point.field("model_path", model_path)
                     point.field("model", "yes")
                     point.field("multiplier", "[1,2,3]")
-                    point.field("pickle_path", "Model2")
+                    point.field("pickle_path", model_path)
+                    point.field("asset_id", asset_id)
                     point.field("synced", int(0))
                     self.points.append(point)
-                    print ("Insertion successful")
-                else:
-                    print ("ML path and ml attributes already present")
 
-                #Check and write type, mean, std_dev from AssetMLModelOp
-                query = '''from(bucket: \"''' + self.bucket + '''\")
-                        |> range(start: 0)
-                        |> filter(fn: (r) => r["_measurement"] == "ConfigData")
-                        |> filter(fn: (r) => r["Table"] == "AssetMLModelOp")
-                        |> filter(fn: (r) => r["Tag1"] == "Asset")
-                        |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
-                        |> filter(fn: (r) => r["type"] == \"''' + type + '''\" and r["mean"] == \"''' + mean + '''\" and r["std_dev"] == \"''' + std_dev + '''\")                                     
-                    '''
-                data_frame = self.query_api.query_data_frame(query)
-                check = len(data_frame)
-                print(check)
-                if(check == 0):
+                    #Write type, mean, std_dev from AssetMLModelOp
                     point = Point("ConfigData")
                     point.measurement("ConfigData")
-                    point.tag("Table", "AssetMLModelConfig")
+                    point.tag("Table", "AssetMLModelOp")
                     point.tag("Tag1", "Asset")
-                    point.field("upper_limit", upper_limit)
-                    point.field("lower_limit", lower_limit)
+                    point.field("upper_limit", int(0))
+                    point.field("lower_limit", int(0))
                     point.field("type", type)
                     point.field("mean", mean)
+                    point.field("asset_id", asset_id)
                     point.field("range_end", int(0))
                     point.field("range_start", int(0))
                     point.field("std_dev", std_dev)
@@ -914,12 +906,157 @@ class DbService:
                     return "Insertion successful"
                 else:
                     return "You are trying to insert duplicate values."
-                
+            else:
+                return "ERROR: Case Sensitive, Please write either yes or no only for model field."
+
         except Exception as ex:
-                print("\nFailed to write asset fault rule details from influx" + str(os.path.basename(__file__)) + str(ex))
+                print("\nFailed to write asset ml config details from influx" + str(os.path.basename(__file__)) + str(ex))
                 self.LOG.ERROR(
-                "\nFailed to write asset fault rule details from influx" + str(os.path.basename(__file__)) + str(ex))
+                "\nFailed to write asset ml config details from influx" + str(os.path.basename(__file__)) + str(ex))
         pass
+
+    def post_shopmlconfig(self, data):
+        try:
+            self.points = []
+            shop_name = data["shop_name"]
+            model = data["model"]
+            shop_id = str(uuid.uuid4())
+
+            #Getting shop id from the shop name from ShopConfig
+            query = '''from(bucket: \"''' + self.bucket + '''\")
+                        |> range(start: 0)
+                        |> filter(fn: (r) => r["_measurement"] == "ConfigData")
+                        |> filter(fn: (r) => r["Table"] == "ShopConfig")
+                        |> filter(fn: (r) => r["Tag1"] == "Shop")
+                        |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+                        |> filter(fn: (r) => r["shop_name"] == \"''' + shop_name + '''\")                                        
+                    '''
+            
+            data_frame = self.query_api.query_data_frame(query)
+            check = len(data_frame)
+            print(check)
+            if(check == 0):
+                return "Provided shop name does not exist."
+            else:
+                data_frame.drop(['result', 'table'], axis=1, inplace=True)
+                df = pd.DataFrame(data_frame)
+                shop_id = df.loc[df['shop_name']==shop_name, 'shop_id'].values[0]
+
+            #If model is not present
+            if(model == "no"):
+                upper_limit = data["upper_limit"]
+                lower_limit = data["lower_limit"]
+                type = data["type"]
+                query = '''from(bucket: \"''' + self.bucket + '''\")
+                        |> range(start: 0)
+                        |> filter(fn: (r) => r["_measurement"] == "ConfigData")
+                        |> filter(fn: (r) => r["Table"] == "ShopMLModelOp")
+                        |> filter(fn: (r) => r["Tag1"] == "Shop")
+                        |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+                        |> filter(fn: (r) => r["upper_limit"] == ''' + str(upper_limit) + ''' and r["lower_limit"] == ''' + str(lower_limit) + ''' and r["type"] == \"''' + type + '''\" )                                     
+                    '''
+                data_frame = self.query_api.query_data_frame(query)
+                check = len(data_frame)
+                print(check)
+
+                # If unique values are provided, write points to table
+                if(check == 0):
+
+                    # Write model = no against newly formed shop_id in ML model config
+                    self.points = []
+                    point = Point("ConfigData")
+                    point.tag("Table", "ShopMLModelConfig")
+                    point.tag("Tag1", "Shop")
+                    point.field("shop_id", shop_id)
+                    point.field("model", "no")
+                    self.points.append(point)
+                    self.write_api.write(bucket=self.bucket, org=self.org, record=self.points)
+
+                    #Write shop_id, type, upper_limit and lower_limit in ML model Op
+                    self.points = []
+                    point = Point("ConfigData")
+                    point.tag("Table", "ShopMLModelOp")
+                    point.tag("Tag1", "Shop")
+                    point.field("upper_limit", upper_limit)
+                    point.field("lower_limit", lower_limit)
+                    point.field("type", type)
+                    point.field("shop_id", shop_id)
+                    point.field("mean", int(0))
+                    # point.field("range_end", int(0))
+                    # point.field("range_start", int(0))
+                    point.field("std_dev", int(0))
+                    point.field("synced", int(0))
+                    self.points.append(point)
+                    self.write_api.write(bucket=self.bucket, org=self.org, record=self.points)
+
+                    return "Insertion successful"
+                else:
+                    return "You are trying to insert duplicate values."
+                    
+            # If model is present
+            elif(model == "yes"):
+                #Checking and writing ml_attributes and model_path from ShopMLModelConfig
+                model_path = data["model_path"]
+                type = data["type"]
+                std_dev = data["std_dev"]
+                mean = data["mean"]
+
+                mean = float(mean)
+                std_dev = float(std_dev)
+
+                query = '''from(bucket: \"''' + self.bucket + '''\")
+                        |> range(start: 0)
+                        |> filter(fn: (r) => r["_measurement"] == "ConfigData")
+                        |> filter(fn: (r) => r["Table"] == "ShopMLModelConfig")
+                        |> filter(fn: (r) => r["Tag1"] == "Shop")
+                        |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+                        |> filter(fn: (r) => r["model_path"] == \"''' + model_path + '''\")                                     
+                    '''
+                data_frame = self.query_api.query_data_frame(query)
+                check = len(data_frame)
+                print(check)
+
+                # First check and write model_path and model_attributes
+                if(check == 0):
+                    point = Point("ConfigData")
+                    point.measurement("ConfigData")
+                    point.tag("Table", "ShopMLModelConfig")
+                    point.tag("Tag1", "Shop")
+                    point.field("ml_attributes", "[]")
+                    point.field("model_path", model_path)
+                    point.field("model", "yes")
+                    point.field("multiplier", "[1,2,3]")
+                    point.field("pickle_path", model_path)
+                    point.field("shop_id", shop_id)
+                    point.field("synced", int(0))
+                    self.points.append(point)
+
+                    #Write type, mean, std_dev from ShopMLModelOp
+                    point = Point("ConfigData")
+                    point.measurement("ConfigData")
+                    point.tag("Table", "ShopMLModelOp")
+                    point.tag("Tag1", "Shop")
+                    point.field("upper_limit", int(0))
+                    point.field("lower_limit", int(0))
+                    point.field("type", type)
+                    point.field("mean", mean)
+                    point.field("shop_id", shop_id)
+                    point.field("range_end", int(0))
+                    point.field("range_start", int(0))
+                    point.field("std_dev", std_dev)
+                    point.field("synced", int(0))
+                    self.points.append(point)
+                    return "Insertion successful"
+                else:
+                    return "You are trying to insert duplicate values."
+            else:
+                return "ERROR: Case Sensitive, Please write either yes or no only for model field."
+
+        except Exception as ex:
+                print("\nFailed to write shop ml config details from influx" + str(os.path.basename(__file__)) + str(ex))
+                self.LOG.ERROR(
+                "\nFailed to write shop ml config details from influx" + str(os.path.basename(__file__)) + str(ex))
+        pass        
 
     def put_assetconfig(self, data):
         try:
