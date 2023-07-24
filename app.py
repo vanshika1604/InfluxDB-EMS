@@ -134,6 +134,78 @@ def get_shopmlconfig():
         LOG.ERROR("Exception /emsadminapi/v1/get_shopmlconfig: " + str(ex))
         return ex
 
+@app.route('/emsadminapi/v1/get_shiftconfig', methods=['GET'])
+def get_shifconfig():
+    try:
+        cache_key = "get_shiftconfig"
+        cached_data = cache.get(cache_key)
+        print(cache_key)
+        if cached_data:
+            return jsonify(json.loads(cached_data)), 200
+        output = dbService.get_shifconfig()
+        cache.set(cache_key, json.dumps(output), ex=5)
+        print("Response /emsadminapi/v1/get_shiftconfig ")
+        LOG.INFO("Response /emsadminapi/v1/get_shiftconfig ")
+        return jsonify(output), 200
+    except Exception as ex:
+        print("Exception /emsadminapi/v1/get_shiftconfig" + str(ex))
+        LOG.ERROR("Exception /emsadminapi/v1/get_shiftconfig: " + str(ex))
+        return ex
+
+@app.route('/emsadminapi/v1/get_kpiconfig', methods=['GET'])
+def get_kpiconfig():
+    try:
+        cache_key = "get_kpiconfig"
+        cached_data = cache.get(cache_key)
+        print(cache_key)
+        if cached_data:
+            return jsonify(json.loads(cached_data)), 200
+        output = dbService.get_kpiconfig()
+        cache.set(cache_key, json.dumps(output), ex=5)
+        print("Response /emsadminapi/v1/get_kpiconfig ")
+        LOG.INFO("Response /emsadminapi/v1/get_kpiconfig ")
+        return jsonify(output), 200
+    except Exception as ex:
+        print("Exception /emsadminapi/v1/get_kpiconfig" + str(ex))
+        LOG.ERROR("Exception /emsadminapi/v1/get_kpiconfig: " + str(ex))
+        return ex
+
+@app.route('/emsadminapi/v1/get_whatsappconfig', methods=['GET'])
+def get_whatsappconfig():
+    try:
+        cache_key = "get_whatsappconfig"
+        cached_data = cache.get(cache_key)
+        print(cache_key)
+        if cached_data:
+            return jsonify(json.loads(cached_data)), 200
+        output = dbService.get_whatsappconfig()
+        cache.set(cache_key, json.dumps(output), ex=5)
+        print("Response /emsadminapi/v1/get_whatsappconfig ")
+        LOG.INFO("Response /emsadminapi/v1/get_whatsappconfig ")
+        return jsonify(output), 200
+    except Exception as ex:
+        print("Exception /emsadminapi/v1/get_whatsappconfig" + str(ex))
+        LOG.ERROR("Exception /emsadminapi/v1/get_whatsappconfig: " + str(ex))
+        return ex
+    
+@app.route('/emsadminapi/v1/get_emailconfig', methods=['GET'])
+def get_emailconfig():
+    try:
+        cache_key = "get_emailconfig"
+        cached_data = cache.get(cache_key)
+        print(cache_key)
+        if cached_data:
+            return jsonify(json.loads(cached_data)), 200
+        output = dbService.get_emailconfig()
+        cache.set(cache_key, json.dumps(output), ex=5)
+        print("Response /emsadminapi/v1/get_emailconfig ")
+        LOG.INFO("Response /emsadminapi/v1/get_emailconfig ")
+        return jsonify(output), 200
+    except Exception as ex:
+        print("Exception /emsadminapi/v1/get_emailconfig" + str(ex))
+        LOG.ERROR("Exception /emsadminapi/v1/get_emailconfig: " + str(ex))
+        return ex
+
 @app.route('/emsadminapi/v1/post_assetconfig', methods=['POST'])
 def post_assetconfig():
     try:
@@ -244,6 +316,94 @@ def post_assetmlconfig():
         LOG.ERROR("Exception /emsadminapi/v1/post_assetmlconfig: " + str(ex))
         return ex
 
+@app.route('/emsadminapi/v1/post_shiftconfig', methods=['POST'])
+def post_shiftconfig():
+    try:
+        dict_data = request.get_json()
+        temp = json.dumps(dict_data)
+        data = json.loads(temp)
+        # cache_key = "post_shiftconfig"
+        # cached_data = cache.get(cache_key)
+        # print(cache_key)
+        # if cached_data:
+        #     return jsonify(json.loads(cached_data)), 200
+       
+        output = dbService.post_shiftconfig(data)
+        # cache.set(cache_key, json.dumps(output), ex=900)
+        print("Response /emsadminapi/v1/post_shiftconfig ")
+        LOG.INFO("Response /emsadminapi/v1/post_shiftconfig ")
+        return output, 200
+    except Exception as ex:
+        print("Exception /emsadminapi/v1/post_shiftconfig" + str(ex))
+        LOG.ERROR("Exception /emsadminapi/v1/post_shiftconfig: " + str(ex))
+        return ex
+
+@app.route('/emsadminapi/v1/post_kpiconfig', methods=['POST'])
+def post_kpiconfig():
+    try:
+        dict_data = request.get_json()
+        temp = json.dumps(dict_data)
+        data = json.loads(temp)
+        # cache_key = "post_kpiconfig"
+        # cached_data = cache.get(cache_key)
+        # print(cache_key)
+        # if cached_data:
+        #     return jsonify(json.loads(cached_data)), 200
+       
+        output = dbService.post_kpiconfig(data)
+        # cache.set(cache_key, json.dumps(output), ex=900)
+        print("Response /emsadminapi/v1/post_kpiconfig ")
+        LOG.INFO("Response /emsadminapi/v1/post_kpiconfig ")
+        return output, 200
+    except Exception as ex:
+        print("Exception /emsadminapi/v1/post_kpiconfig" + str(ex))
+        LOG.ERROR("Exception /emsadminapi/v1/post_kpiconfig: " + str(ex))
+        return ex
+    
+@app.route('/emsadminapi/v1/post_whatsappconfig', methods=['POST'])
+def post_whatsappconfig():
+    try:
+        dict_data = request.get_json()
+        temp = json.dumps(dict_data)
+        data = json.loads(temp)
+        # cache_key = "post_whatsappconfig"
+        # cached_data = cache.get(cache_key)
+        # print(cache_key)
+        # if cached_data:
+        #     return jsonify(json.loads(cached_data)), 200
+       
+        output = dbService.post_whatsappconfig(data)
+        # cache.set(cache_key, json.dumps(output), ex=900)
+        print("Response /emsadminapi/v1/post_whatsappconfig ")
+        LOG.INFO("Response /emsadminapi/v1/post_whatsappconfig ")
+        return output, 200
+    except Exception as ex:
+        print("Exception /emsadminapi/v1/post_whatsappconfig" + str(ex))
+        LOG.ERROR("Exception /emsadminapi/v1/post_whatsappconfig: " + str(ex))
+        return ex
+    
+@app.route('/emsadminapi/v1/post_emailconfig', methods=['POST'])
+def post_emailconfig():
+    try:
+        dict_data = request.get_json()
+        temp = json.dumps(dict_data)
+        data = json.loads(temp)
+        # cache_key = "post_emailconfig"
+        # cached_data = cache.get(cache_key)
+        # print(cache_key)
+        # if cached_data:
+        #     return jsonify(json.loads(cached_data)), 200
+       
+        output = dbService.post_emailconfig(data)
+        # cache.set(cache_key, json.dumps(output), ex=900)
+        print("Response /emsadminapi/v1/post_emailconfig ")
+        LOG.INFO("Response /emsadminapi/v1/post_emailconfig ")
+        return output, 200
+    except Exception as ex:
+        print("Exception /emsadminapi/v1/post_emailconfig" + str(ex))
+        LOG.ERROR("Exception /emsadminapi/v1/post_emailconfig: " + str(ex))
+        return ex
+
 @app.route('/emsadminapi/v1/put_assetconfig', methods=['PUT'])
 def put_assetconfig():
     try:
@@ -262,7 +422,6 @@ def put_assetconfig():
         print("Exception /emsadminapi/v1/put_assetconfig" + str(ex))
         LOG.ERROR("Exception /emsadminapi/v1/put_assetconfig: " + str(ex))
         return ex
-    
 
 @app.route('/emsadminapi/v1/put_assetattributes', methods=['PUT'])
 def put_assetattributes():
