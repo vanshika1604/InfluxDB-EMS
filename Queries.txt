@@ -1,0 +1,307 @@
+Basic query:
+from(bucket: "59830e07-71a6-4ff0-9531-1f9fc4813fe0")
+  |> range(start: 0)
+  |> filter(fn: (r) => r["_measurement"] == "ConfigData")
+  |> filter(fn: (r) => r["Tag1"] == "Org")
+  |> filter(fn: (r) => r["Table"] == "OrgConfig")
+  |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+
+
+Note: To run the following using python, replace from(bucket: "59830e07-71a6-4ff0-9531-1f9fc4813fe0") with from(bucket: \"''' + self.bucket + '''\") in case of class used.
+
+
+INFLUX DB QUERIES
+
+For Asset Configuration:
+
+import "join"
+
+                         l = from(bucket: "59830e07-71a6-4ff0-9531-1f9fc4813fe0")
+                          |> range(start: 0)
+                          |> filter(fn: (r) => r["_measurement"] == "ConfigData")
+                          |> filter(fn: (r) => r["Tag1"] == "Asset")
+                          |> filter(fn: (r) => r["Table"] == "AssetConfig")
+                          |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+                          |> keep(columns: ["asset_name", "asset_id","shop_id"])
+  
+                         r = from(bucket: "59830e07-71a6-4ff0-9531-1f9fc4813fe0")
+                          |> range(start: 0)
+                          |> filter(fn: (r) => r["_measurement"] == "ConfigData")
+                          |> filter(fn: (r) => r["Tag1"] == "Shop")
+                          |> filter(fn: (r) => r["Table"] == "ShopConfig")
+                          |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+                          |> keep(columns: ["shop_name", "shop_id","factory_id"])   
+
+                        a=join.inner(
+                                    left: l ,
+                                    right: r,
+                                    on: (l, r) => l.shop_id == r.shop_id,
+                                    as: (l, r) => ({l with shop_id: r.shop_id,
+                                                    factory_id: r.factory_id,
+                                                    shop_name: r.shop_name}),
+                                 ) 
+
+                         l1 = from(bucket: "59830e07-71a6-4ff0-9531-1f9fc4813fe0")
+                           |> range(start: 0)
+                           |> filter(fn: (r) => r["_measurement"] == "ConfigData")
+                           |> filter(fn: (r) => r["Tag1"] == "Factory")
+                           |> filter(fn: (r) => r["Table"] == "FactoryConfig")               
+                           |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+                           |> keep(columns: ["factory_name","factory_id","org_id"]) 
+                         
+                         r1 = from(bucket: "59830e07-71a6-4ff0-9531-1f9fc4813fe0")
+                           |> range(start: 0)
+                           |> filter(fn: (r) => r["_measurement"] == "ConfigData")
+                           |> filter(fn: (r) => r["Tag1"] == "Org")
+                           |> filter(fn: (r) => r["Table"] == "OrgConfig")
+                           |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+                           |> keep(columns: ["org_id", "org_name"]) 
+                           
+                         b=join.inner(
+                                     left: l1 ,
+                                     right: r1,
+                                     on: (l, r) => l.org_id == r.org_id,
+                                     as: (l, r) => ({l with org_id: r.org_id ,
+                                                     org_name: r.org_name}),
+                                 )   
+                         
+                         join.inner(
+                                     left: a ,
+                                     right: b,
+                                     on: (l, r) => l.factory_id == r.factory_id,
+                                     as: (l, r) => ({l with factory_id: r.factory_id , 
+                                                     org_id : r.org_id,
+                                                     factory_name: r.factory_name,
+                                                     org_name: r.org_name}),
+                                 ) 
+
+For Asset attributes:
+
+import "join"
+
+                         l = from(bucket: "59830e07-71a6-4ff0-9531-1f9fc4813fe0")
+                          |> range(start: 0)
+                          |> filter(fn: (r) => r["_measurement"] == "ConfigData")
+                          |> filter(fn: (r) => r["Tag1"] == "Asset")
+                          |> filter(fn: (r) => r["Table"] == "AssetConfig")
+                          |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+                          |> keep(columns: ["asset_name", "asset_id"])
+  
+                         r = from(bucket: "59830e07-71a6-4ff0-9531-1f9fc4813fe0")
+                          |> range(start: 0)
+                          |> filter(fn: (r) => r["_measurement"] == "ConfigData")
+                          |> filter(fn: (r) => r["Tag1"] == "Asset")
+                          |> filter(fn: (r) => r["Table"] == "AssetAttributeMapping")
+                          |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+                          |> keep(columns: ["assetattribute_id", "asset_id"])   
+
+                        a=join.inner(
+                                    left: l ,
+                                    right: r,
+                                    on: (l, r) => l.asset_id == r.asset_id,
+                                    as: (l, r) => ({l with asset_id: r.asset_id,
+                                                    assetattribute_id: r.assetattribute_id}),
+                                 ) 
+
+                         b = from(bucket: "59830e07-71a6-4ff0-9531-1f9fc4813fe0")
+                           |> range(start: 0)
+                           |> filter(fn: (r) => r["_measurement"] == "ConfigData")
+                           |> filter(fn: (r) => r["Tag1"] == "Asset")
+                           |> filter(fn: (r) => r["Table"] == "AssetAttributes")               
+                           |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+                           |> keep(columns: ["assetattribute_id","attribute_name"]) 
+                         
+                           
+                         join.inner(
+                                     left: a ,
+                                     right: b,
+                                     on: (l, r) => l.assetattribute_id == r.assetattribute_id,
+                                     as: (l, r) => ({l with assetattribute_id: r.assetattribute_id ,
+                                                     attribute_name: r.attribute_name}),
+                                 )   
+
+
+For Shop Attributes:
+
+import "join"
+
+                         l = from(bucket: "59830e07-71a6-4ff0-9531-1f9fc4813fe0")
+                          |> range(start: 0)
+                          |> filter(fn: (r) => r["_measurement"] == "ConfigData")
+                          |> filter(fn: (r) => r["Tag1"] == "Shop")
+                          |> filter(fn: (r) => r["Table"] == "ShopConfig")
+                          |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+                          |> keep(columns: ["shop_name", "shop_id"])
+  
+                         r = from(bucket: "59830e07-71a6-4ff0-9531-1f9fc4813fe0")
+                          |> range(start: 0)
+                          |> filter(fn: (r) => r["_measurement"] == "ConfigData")
+                          |> filter(fn: (r) => r["Tag1"] == "Shop")
+                          |> filter(fn: (r) => r["Table"] == "ShopAttributeMapping")
+                          |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+                          |> keep(columns: ["shopattribute_id", "shop_id"])   
+
+                        a=join.inner(
+                                    left: l ,
+                                    right: r,
+                                    on: (l, r) => l.shop_id == r.shop_id,
+                                    as: (l, r) => ({l with shop_id: r.shop_id,
+                                                    shopattribute_id: r.shopattribute_id}),
+                                 ) 
+
+                         b = from(bucket: "59830e07-71a6-4ff0-9531-1f9fc4813fe0")
+                           |> range(start: 0)
+                           |> filter(fn: (r) => r["_measurement"] == "ConfigData")
+                           |> filter(fn: (r) => r["Tag1"] == "Shop")
+                           |> filter(fn: (r) => r["Table"] == "ShopAttributes")               
+                           |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+                           |> keep(columns: ["shopattribute_id","attribute_name"]) 
+                         
+                           
+                         join.inner(
+                                     left: a ,
+                                     right: b,
+                                     on: (l, r) => l.shopattribute_id == r.shopattribute_id,
+                                     as: (l, r) => ({l with shopattribute_id: r.shopattribute_id ,
+                                                     attribute_name: r.attribute_name}),
+                                 )
+
+
+
+For Asset Fault Rule Configuration  
+
+ import "join"
+
+                         l = from(bucket: "59830e07-71a6-4ff0-9531-1f9fc4813fe0")
+                          |> range(start: 0)
+                          |> filter(fn: (r) => r["_measurement"] == "ConfigData")
+                          |> filter(fn: (r) => r["Tag1"] == "Asset")
+                          |> filter(fn: (r) => r["Table"] == "AssetConfig")
+                          |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+                          |> keep(columns: ["asset_name", "asset_id"])
+  
+                         r = from(bucket: "59830e07-71a6-4ff0-9531-1f9fc4813fe0")
+                          |> range(start: 0)
+                          |> filter(fn: (r) => r["_measurement"] == "ConfigData")
+                          |> filter(fn: (r) => r["Tag1"] == "Asset")
+                          |> filter(fn: (r) => r["Table"] == "AssetRuleMapping")
+                          |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+                          |> keep(columns: ["asset_id", "rule_id"])   
+
+                        a=join.inner(
+                                    left: l ,
+                                    right: r,
+                                    on: (l, r) => l.asset_id == r.asset_id,
+                                    as: (l, r) => ({l with asset_id: r.asset_id,
+                                                    rule_id: r.rule_id}),
+                                 ) 
+
+                         b = from(bucket: "59830e07-71a6-4ff0-9531-1f9fc4813fe0")
+                           |> range(start: 0)
+                           |> filter(fn: (r) => r["_measurement"] == "ConfigData")
+                           |> filter(fn: (r) => r["Tag1"] == "Asset")
+                           |> filter(fn: (r) => r["Table"] == "AssetAlertRules")               
+                           |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+                           |> keep(columns: ["condition","alert","action","rule_id"]) 
+                         
+                           
+                         join.inner(
+                                     left: a ,
+                                     right: b,
+                                     on: (l, r) => l.rule_id == r.rule_id,
+                                     as: (l, r) => ({l with condition: r.condition ,
+                                                     alert: r.alert, action: r.action}),
+                                 )   
+
+For Asset ML Configuration :
+
+import "join"
+
+                         l = from(bucket: "59830e07-71a6-4ff0-9531-1f9fc4813fe0")
+                          |> range(start: 0)
+                          |> filter(fn: (r) => r["_measurement"] == "ConfigData" and r["Tag1"] == "Asset" and r["Table"] == "AssetMLModelConfig")
+                          |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+                          |> keep(columns: ["asset_name", "model_path", "ml_attributes", "asset_id"])
+  
+                         r = from(bucket: "59830e07-71a6-4ff0-9531-1f9fc4813fe0")
+                          |> range(start: 0)
+                          |> filter(fn: (r) => r["_measurement"] == "ConfigData" and r["Tag1"] == "Asset" and r["Table"] == "AssetMLModelOp")
+                          |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+                          |> keep(columns: ["std_dev", "asset_id", "mean", "type", "upper_limit", "lower_limit"])   
+
+                        a=join.inner(
+                                    left: l ,
+                                    right: r,
+                                    on: (l, r) => l.asset_id == r.asset_id,
+                                    as: (l, r) => ({l with std_dev: r.std_dev,
+                                                    mean: r.mean,
+                                                    type: r.type,
+                                                    upper_limit : r.upper_limit,
+                                                    lower_limit : r.lower_limit}),           
+                                 )
+
+                        b= from(bucket: "59830e07-71a6-4ff0-9531-1f9fc4813fe0")
+                          |> range(start: 0)
+                          |> filter(fn: (r) => r["_measurement"] == "ConfigData" and r["Tag1"] == "Asset" and r["Table"] == "AssetConfig")
+                          |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+                          |> keep(columns: ["asset_name", "asset_id"])  
+
+                          join.inner(
+                                    left: a ,
+                                    right: b,
+                                    on: (l, r) => l.asset_id == r.asset_id,
+                                    as: (l, r) => ({l with asset_name: r.asset_name}),           
+                                 )
+For Shop ML Configuration :
+
+import "join"
+
+                         l = from(bucket: "59830e07-71a6-4ff0-9531-1f9fc4813fe0")
+                          |> range(start: 0)
+                          |> filter(fn: (r) => r["_measurement"] == "ConfigData" and r["Tag1"] == "Shop" and r["Table"] == "ShopMLModelConfig")
+                          |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+                          |> keep(columns: ["shop_name", "model_path", "ml_attributes", "shop_id"])
+  
+                         r = from(bucket: "59830e07-71a6-4ff0-9531-1f9fc4813fe0")
+                          |> range(start: 0)
+                          |> filter(fn: (r) => r["_measurement"] == "ConfigData" and r["Tag1"] == "Shop" and r["Table"] == "ShopMLModelOp")
+                          |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+                          |> keep(columns: ["std_dev", "shop_id", "mean", "type", "upper_limit", "lower_limit"])   
+
+                        join.inner(
+                                    left: l ,
+                                    right: r,
+                                    on: (l, r) => l.shop_id == r.shop_id,
+                                    as: (l, r) => ({l with std_dev: r.std_dev,
+                                                    mean: r.mean,
+                                                    type: r.type,
+                                                    upper_limit : r.upper_limit,
+                                                    lower_limit : r.lower_limit}),           
+                                 ) 
+                               
+
+Query to count no. of entries with particular asset_id:
+
+from(bucket: "59830e07-71a6-4ff0-9531-1f9fc4813fe0")
+                        |> range(start: 0)
+                        |> filter(fn: (r) => r["_measurement"] == "ConfigData")
+                        |> filter(fn: (r) => r["Table"] == "AssetAttributeMapping")
+                        |> filter(fn: (r) => r["Tag1"] == "Asset")
+                        |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+                        |> filter(fn: (r) => r["asset_id"] == "acd8c410-2cb4-48a7-a032-0f4a2f4a85f6") 
+                        |> count(column: "asset_id")   
+
+Transfer data from one bucket to another bucket
+from(bucket: "59830e07-71a6-4ff0-9531-1f9fc4813fe0")
+  |> range(start: 0)
+  |> filter(fn: (r) => r._measurement == "ConfigData")
+  |> to(bucket: "testing", org: "ems")
+
+ 
+
+
+
+
+                        
+
+
