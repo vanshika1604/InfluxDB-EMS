@@ -477,6 +477,82 @@ def put_assetfaultruleconfig():
         LOG.ERROR("Exception /emsadminapi/v1/put_assetfaultruleconfig: " + str(ex))
         return ex
     
+@app.route('/emsadminapi/v1/put_shiftconfig', methods=['PUT'])
+def put_shiftconfig():
+    try:
+        dict_data = request.get_json()
+        temp = json.dumps(dict_data)
+        data = json.loads(temp)
+        # print(data)
+        # dict_data2 = request.get_json()
+        # temp = json.dumps(dict_data2)
+        # data2 = json.loads(temp)
+        output = dbService.put_shiftconfig(data)
+        print("Response /emsadminapi/v1/put_shiftconfig")
+        LOG.INFO("Response /emsadminapi/v1/put_shiftconfig ")
+        return output, 200
+    except Exception as ex:
+        print("Exception /emsadminapi/v1/put_shiftconfig" + str(ex))
+        LOG.ERROR("Exception /emsadminapi/v1/put_shiftconfig: " + str(ex))
+        return ex
+    
+@app.route('/emsadminapi/v1/put_kpiconfig', methods=['PUT'])
+def put_kpiconfig():
+    try:
+        dict_data = request.get_json()
+        temp = json.dumps(dict_data)
+        data = json.loads(temp)
+        # print(data)
+        # dict_data2 = request.get_json()
+        # temp = json.dumps(dict_data2)
+        # data2 = json.loads(temp)
+        output = dbService.put_kpiconfig(data)
+        print("Response /emsadminapi/v1/put_kpiconfig")
+        LOG.INFO("Response /emsadminapi/v1/put_kpiconfig ")
+        return output, 200
+    except Exception as ex:
+        print("Exception /emsadminapi/v1/put_kpiconfig" + str(ex))
+        LOG.ERROR("Exception /emsadminapi/v1/put_kpiconfig: " + str(ex))
+        return ex
+
+@app.route('/emsadminapi/v1/put_emailconfig', methods=['PUT'])
+def put_emailconfig():
+    try:
+        dict_data = request.get_json()
+        temp = json.dumps(dict_data)
+        data = json.loads(temp)
+        # print(data)
+        # dict_data2 = request.get_json()
+        # temp = json.dumps(dict_data2)
+        # data2 = json.loads(temp)
+        output = dbService.put_emailconfig(data)
+        print("Response /emsadminapi/v1/put_emailconfig")
+        LOG.INFO("Response /emsadminapi/v1/put_emailconfig ")
+        return output, 200
+    except Exception as ex:
+        print("Exception /emsadminapi/v1/put_emailconfig" + str(ex))
+        LOG.ERROR("Exception /emsadminapi/v1/put_emailconfig: " + str(ex))
+        return ex
+
+@app.route('/emsadminapi/v1/put_whatsappconfig', methods=['PUT'])
+def put_whatsappconfig():
+    try:
+        dict_data = request.get_json()
+        temp = json.dumps(dict_data)
+        data = json.loads(temp)
+        # print(data)
+        # dict_data2 = request.get_json()
+        # temp = json.dumps(dict_data2)
+        # data2 = json.loads(temp)
+        output = dbService.put_whatsappconfig(data)
+        print("Response /emsadminapi/v1/put_whatsappconfig")
+        LOG.INFO("Response /emsadminapi/v1/put_whatsappconfig ")
+        return output, 200
+    except Exception as ex:
+        print("Exception /emsadminapi/v1/put_whatsappconfig" + str(ex))
+        LOG.ERROR("Exception /emsadminapi/v1/put_whatsappconfig: " + str(ex))
+        return ex
+
 @app.route('/emsadminapi/v1/delete_assetconfig', methods=['DELETE'])
 def delete_assetconfig():
     try:
@@ -556,6 +632,87 @@ def delete_assetfaultruleconfig():
         print("Exception /emsadminapi/v1/delete_assetfaultruleconfig" + str(ex))
         LOG.ERROR("Exception /emsadminapi/v1/delete_assetfaultruleconfig: " + str(ex))
         return ex
+    
+@app.route('/emsadminapi/v1/delete_shiftconfig', methods=['DELETE'])
+def delete_shiftconfig():
+    try:
+        dict_data = request.get_json()
+        temp = json.dumps(dict_data)
+        data = json.loads(temp)
+        print(data)
+        # dict_data2 = request.get_json()
+        # temp = json.dumps(dict_data2)
+        # data2 = json.loads(temp)
+        
+        output = dbService.delete_shiftconfig(data)
+        print("Response /emsadminapi/v1/delete_shiftconfig")
+        LOG.INFO("Response /emsadminapi/v1/delete_shiftconfig ")
+        return output, 200
+    except Exception as ex:
+        print("Exception /emsadminapi/v1/delete_shiftconfig" + str(ex))
+        LOG.ERROR("Exception /emsadminapi/v1/delete_shiftconfig: " + str(ex))
+        return ex
+
+@app.route('/emsadminapi/v1/delete_kpiconfig', methods=['DELETE'])
+def delete_kpiconfig():
+    try:
+        dict_data = request.get_json()
+        temp = json.dumps(dict_data)
+        data = json.loads(temp)
+        print(data)
+        # dict_data2 = request.get_json()
+        # temp = json.dumps(dict_data2)
+        # data2 = json.loads(temp)
+        
+        output = dbService.delete_kpiconfig(data)
+        print("Response /emsadminapi/v1/delete_kpiconfig")
+        LOG.INFO("Response /emsadminapi/v1/delete_kpiconfig ")
+        return output, 200
+    except Exception as ex:
+        print("Exception /emsadminapi/v1/delete_kpiconfig" + str(ex))
+        LOG.ERROR("Exception /emsadminapi/v1/delete_kpiconfig: " + str(ex))
+        return ex
+
+@app.route('/emsadminapi/v1/delete_emailconfig', methods=['DELETE'])
+def delete_emailconfig():
+    try:
+        dict_data = request.get_json()
+        temp = json.dumps(dict_data)
+        data = json.loads(temp)
+        print(data)
+        # dict_data2 = request.get_json()
+        # temp = json.dumps(dict_data2)
+        # data2 = json.loads(temp)
+        
+        output = dbService.delete_emailconfig(data)
+        print("Response /emsadminapi/v1/delete_emailconfig")
+        LOG.INFO("Response /emsadminapi/v1/delete_emailconfig ")
+        return output, 200
+    except Exception as ex:
+        print("Exception /emsadminapi/v1/delete_emailconfig" + str(ex))
+        LOG.ERROR("Exception /emsadminapi/v1/delete_emailconfig: " + str(ex))
+        return ex
+
+@app.route('/emsadminapi/v1/delete_whatsappconfig', methods=['DELETE'])
+def delete_whatsappconfig():
+    try:
+        dict_data = request.get_json()
+        temp = json.dumps(dict_data)
+        data = json.loads(temp)
+        print(data)
+        # dict_data2 = request.get_json()
+        # temp = json.dumps(dict_data2)
+        # data2 = json.loads(temp)
+        
+        output = dbService.delete_whatsappconfig(data)
+        print("Response /emsadminapi/v1/delete_whatsappconfig")
+        LOG.INFO("Response /emsadminapi/v1/delete_whatsappconfig ")
+        return output, 200
+    except Exception as ex:
+        print("Exception /emsadminapi/v1/delete_whatsappconfig" + str(ex))
+        LOG.ERROR("Exception /emsadminapi/v1/delete_whatsappconfig: " + str(ex))
+        return ex 
+
         
 if __name__ == '__main__':
     serve(app, host="localhost", port=3005)

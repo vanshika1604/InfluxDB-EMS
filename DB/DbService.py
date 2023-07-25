@@ -36,47 +36,6 @@ class DbService:
             self.LOG.ERROR("Connection to InfluxDB Failed " + str(os.path.basename(__file__)) + str(ex))
             print("\nConnection to InfluxDB Failed " + str(os.path.basename(__file__)) + str(ex))
 
-    # def get_assetconfig(self, timerange, asset):
-    #     final_output = []
-    #     try:
-    #         query = '''
-    #                     from(bucket: \"''' + self.bucket + '''\")
-    #                             |> range(start: 0)
-    #                             |> filter(fn: (r) => r["_measurement"] == "ConfigData")
-    #                             |> filter(fn: (r) => r["Tag1"] == "Asset")
-    #                             |> filter(fn: (r) => r["Table"] == "AssetConfig")
-    #                             |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
-    #                 '''
-    #         print("\n Querying for get_assetconfig\n")
-    #         # print(str(query))
-    #         data_stream = self.query_api.query_data_frame(query)
-    #         if len(data_stream) > 0:
-    #             data_stream = data_stream.round(2)
-    #             data_stream.drop(columns=['Tag1', 'Table'], inplace=True)
-    #             # convert DataFrame to list of dictionaries
-    #             for index, row in data_stream.iterrows():
-    #                 datetime_object = row["_time"]
-    #                 # datetime_object = datetime.strptime(row["_time"], self.utc_format_str)
-    #                 str(datetime_object)
-    #                 local_time = str(datetime_object.replace(tzinfo=pytz.utc).astimezone(self.local_tz))
-    #                 datetime_object = row["_time"]
-    #                 # datetime_object = datetime.strptime(row["_time"], self.utc_format_str)
-    #                 str(datetime_object)
-    #                 row_dict = row.to_dict()
-    #                 # row_dict["read_timestamp"] = local_time
-    #                 row_dict["year"] = str(datetime_object.strftime("%Y"))
-    #                 row_dict["month"] = str(datetime_object.strftime("%b"))
-    #                 row_dict["date"] = str(datetime_object.strftime("%d"))
-    #                 for e in ['_time']:
-    #                     row_dict.pop(e, 'no key found')
-    #                 final_output.append(row_dict)
-    #         return final_output
-    #     except Exception as ex:
-    #         self.LOG.ERROR(
-    #             "Asset Config Data Read Operation in Influxdb Failed " + str(os.path.basename(__file__)) + str(ex))
-    #         print("\nAsset Config Data Read Operation in Influxdb Failed " + str(os.path.basename(__file__)) + str(ex))
-    #         return final_output
-
     def get_assetconfig(self):
         try:
             # print("\nReading asset and shop config details from influx" + str(os.path.basename(__file__)))
@@ -625,7 +584,6 @@ class DbService:
                 "\nFailed to write asset config details from influx: " + str(os.path.basename(__file__)) + str(ex))
             pass
 
-
     def post_assetattributes(self, data):
         try:
             self.points = []
@@ -642,6 +600,7 @@ class DbService:
                         |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
                         |> filter(fn: (r) => r["asset_name"] == \"''' + asset_name + '''\")                                        
                     '''
+            
             print(query)
             data_frame = self.query_api.query_data_frame(query)
             check = len(data_frame)
@@ -662,11 +621,13 @@ class DbService:
                         |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
                         |> filter(fn: (r) => r["attribute_name"] == \"''' + attribute_name + '''\")                                      
                     '''
+            
             print(query)
             data_frame = self.query_api.query_data_frame(query)
             check = len(data_frame)
             print(check)
             if(check==0):
+                self.points = []
                 point = Point("ConfigData")
                 point.tag("Table", "AssetAttributes")
                 point.tag("Tag1", "Asset")
@@ -674,7 +635,6 @@ class DbService:
                 point.field("assetattribute_id", assetattribute_id)
                 point.field("synced", int(0))
                 self.points.append(point)    
-
                 self.write_api.write(bucket=self.bucket, org=self.org, record=self.points)
             else:
                 data_frame.drop(['result', 'table'], axis=1, inplace=True)
@@ -696,6 +656,7 @@ class DbService:
             check = len(data_frame)
             print(check)
             if(check==0):
+                self.points = []
                 point = Point("ConfigData")
                 point.tag("Table", "AssetAttributeMapping")
                 point.tag("Tag1", "Asset")
@@ -869,14 +830,15 @@ class DbService:
                 
                 self.points.append(point)    
                 self.write_api.write(bucket=self.bucket, org=self.org, record=self.points)
-
+                
             else:
                 data_frame.drop(['result', 'table'], axis=1, inplace=True)
                 df = pd.DataFrame(data_frame)
-                rule_id = df.loc[df['condition']==condition, 'rule_id'].values[0]
+                rule_id = df.loc[df['alert']==alert, 'rule_id'].values[0]
                 # print(assetattribute_id)
            
             #Writing in AssetRuleMapping
+            self.points =[]
             query = '''
                         from(bucket: \"''' + self.bucket + '''\")
                         |> range(start: 0)
@@ -939,9 +901,7 @@ class DbService:
             if(model == "no"):
                 upper_limit = data["upper_limit"]
                 lower_limit = data["lower_limit"]
-                print(upper_limit)
                 type = data["type"]
-                asset_id = str(uuid.uuid4())
 
                 query = '''from(bucket: \"''' + self.bucket + '''\")
                         |> range(start: 0)
@@ -955,10 +915,10 @@ class DbService:
                 data_frame = self.query_api.query_data_frame(query)
                 check = len(data_frame)
                 print(check)
-
                 # If unique values are provided, write points to table
                 if(check == 0):
                     # Write model = no against newly formed asset_id in ML model config
+                    self.points =[]
                     point = Point("ConfigData")
                     point.tag("Table", "AssetMLModelConfig")
                     point.tag("Tag1", "Asset")
@@ -970,23 +930,29 @@ class DbService:
                     self.write_api.write(bucket=self.bucket, org=self.org, record=self.points)
 
                     #Write asset_id, type, upper_limit and lower_limit in ML model Op
+                    self.points =[]
                     point = Point("ConfigData")
                     point.tag("Table", "AssetMLModelOp")
                     point.tag("Tag1", "Asset")
-                    point.field("upper_limit", upper_limit)
-                    point.field("lower_limit", lower_limit)
+                    # point.field("upper_limit", upper_limit)
+                    # point.field("lower_limit", lower_limit)
+                    point.field("upper_limit", int(upper_limit))
+                    point.field("lower_limit", int(lower_limit))
                     point.field("type", type)
                     point.field("asset_id", asset_id)
-                    point.field("mean", int(0))
+                    point.field("mean", float(0))
                     # point.field("range_end", int(0))
                     # point.field("range_start", int(0))
-                    point.field("std_dev", int(0))
+                    point.field("std_dev", float(0))
                     point.field("synced", int(0))
                     self.points.append(point)
                     print(point)
-                    print(self.points)
+                    # print(self.points)
                     self.write_api.write(bucket=self.bucket, org=self.org, record=self.points)
                     return "Insertion successful"
+                else:
+                    return "You are trying to insert duplicate values."
+                
             # If model is present
             elif(model == "yes"):
                 #Checking and writing ml_attributes and model_path from AssetMLModelConfig
@@ -994,9 +960,7 @@ class DbService:
                 type = data["type"]
                 std_dev = data["std_dev"]
                 mean = data["mean"]
-
-                mean = float(mean)
-                std_dev = float(std_dev)
+                ml_attributes = data["ml_attributes"]
 
                 query = '''from(bucket: \"''' + self.bucket + '''\")
                         |> range(start: 0)
@@ -1004,28 +968,33 @@ class DbService:
                         |> filter(fn: (r) => r["Table"] == "AssetMLModelConfig")
                         |> filter(fn: (r) => r["Tag1"] == "Asset")
                         |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
-                        |> filter(fn: (r) => r["model_path"] == \"''' + model_path + '''\")                                     
+                        |> filter(fn: (r) => r["model_path"] == \"''' + model_path + '''\" and r["ml_attributes"] == \"''' + ml_attributes + '''\" and r["mean"] == ''' + str(mean) + ''' and r["std_dev"] == ''' + str(std_dev) + ''')                                     
                     '''
+                print(query)
                 data_frame = self.query_api.query_data_frame(query)
                 check = len(data_frame)
                 print(check)
 
                 # First check and write model_path and model_attributes
                 if(check == 0):
+                    self.points =[]
                     point = Point("ConfigData")
                     point.measurement("ConfigData")
                     point.tag("Table", "AssetMLModelConfig")
                     point.tag("Tag1", "Asset")
-                    point.field("ml_attributes", "[]")
+                    point.field("ml_attributes", ml_attributes)
                     point.field("model_path", model_path)
                     point.field("model", "yes")
                     point.field("multiplier", "[1,2,3]")
                     point.field("pickle_path", model_path)
                     point.field("asset_id", asset_id)
                     point.field("synced", int(0))
+                    print(point)
                     self.points.append(point)
+                    self.write_api.write(bucket=self.bucket, org=self.org, record=self.points)
 
                     #Write type, mean, std_dev from AssetMLModelOp
+                    self.points =[]
                     point = Point("ConfigData")
                     point.measurement("ConfigData")
                     point.tag("Table", "AssetMLModelOp")
@@ -1033,13 +1002,15 @@ class DbService:
                     point.field("upper_limit", int(0))
                     point.field("lower_limit", int(0))
                     point.field("type", type)
-                    point.field("mean", mean)
+                    point.field("mean", float(mean))
                     point.field("asset_id", asset_id)
                     point.field("range_end", int(0))
                     point.field("range_start", int(0))
-                    point.field("std_dev", std_dev)
+                    point.field("std_dev", float(std_dev))
                     point.field("synced", int(0))
+                    print(point)
                     self.points.append(point)
+                    self.write_api.write(bucket=self.bucket, org=self.org, record=self.points)
                     return "Insertion successful"
                 else:
                     return "You are trying to insert duplicate values."
@@ -1052,13 +1023,13 @@ class DbService:
                 "\nFailed to write asset ml config details from influx" + str(os.path.basename(__file__)) + str(ex))
         pass
 
+
     def post_shopmlconfig(self, data):
         try:
             self.points = []
             shop_name = data["shop_name"]
             model = data["model"]
-            shop_id = str(uuid.uuid4())
-
+            
             #Getting shop id from the shop name from ShopConfig
             query = '''from(bucket: \"''' + self.bucket + '''\")
                         |> range(start: 0)
@@ -1084,6 +1055,7 @@ class DbService:
                 upper_limit = data["upper_limit"]
                 lower_limit = data["lower_limit"]
                 type = data["type"]
+
                 query = '''from(bucket: \"''' + self.bucket + '''\")
                         |> range(start: 0)
                         |> filter(fn: (r) => r["_measurement"] == "ConfigData")
@@ -1092,43 +1064,48 @@ class DbService:
                         |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
                         |> filter(fn: (r) => r["upper_limit"] == ''' + str(upper_limit) + ''' and r["lower_limit"] == ''' + str(lower_limit) + ''' and r["type"] == \"''' + type + '''\" )                                     
                     '''
+                print(query)
                 data_frame = self.query_api.query_data_frame(query)
                 check = len(data_frame)
                 print(check)
-
                 # If unique values are provided, write points to table
                 if(check == 0):
                     # Write model = no against newly formed shop_id in ML model config
-                    self.points = []
+                    self.points =[]
                     point = Point("ConfigData")
                     point.tag("Table", "ShopMLModelConfig")
                     point.tag("Tag1", "Shop")
                     point.field("shop_id", shop_id)
                     point.field("model", "no")
                     self.points.append(point)
+                    print(point)
+                    print(self.points)
                     self.write_api.write(bucket=self.bucket, org=self.org, record=self.points)
 
                     #Write shop_id, type, upper_limit and lower_limit in ML model Op
-                    self.points = []
+                    self.points =[]
                     point = Point("ConfigData")
                     point.tag("Table", "ShopMLModelOp")
                     point.tag("Tag1", "Shop")
-                    point.field("upper_limit", upper_limit)
-                    point.field("lower_limit", lower_limit)
+                    # point.field("upper_limit", upper_limit)
+                    # point.field("lower_limit", lower_limit)
+                    point.field("upper_limit", int(upper_limit))
+                    point.field("lower_limit", int(lower_limit))
                     point.field("type", type)
                     point.field("shop_id", shop_id)
-                    point.field("mean", int(0))
+                    point.field("mean", float(0))
                     # point.field("range_end", int(0))
                     # point.field("range_start", int(0))
-                    point.field("std_dev", int(0))
+                    point.field("std_dev", float(0))
                     point.field("synced", int(0))
                     self.points.append(point)
+                    print(point)
+                    # print(self.points)
                     self.write_api.write(bucket=self.bucket, org=self.org, record=self.points)
-
                     return "Insertion successful"
                 else:
                     return "You are trying to insert duplicate values."
-                    
+                
             # If model is present
             elif(model == "yes"):
                 #Checking and writing ml_attributes and model_path from ShopMLModelConfig
@@ -1136,9 +1113,7 @@ class DbService:
                 type = data["type"]
                 std_dev = data["std_dev"]
                 mean = data["mean"]
-
-                mean = float(mean)
-                std_dev = float(std_dev)
+                ml_attributes = data["ml_attributes"]
 
                 query = '''from(bucket: \"''' + self.bucket + '''\")
                         |> range(start: 0)
@@ -1146,28 +1121,33 @@ class DbService:
                         |> filter(fn: (r) => r["Table"] == "ShopMLModelConfig")
                         |> filter(fn: (r) => r["Tag1"] == "Shop")
                         |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
-                        |> filter(fn: (r) => r["model_path"] == \"''' + model_path + '''\")                                     
+                        |> filter(fn: (r) => r["model_path"] == \"''' + model_path + '''\" and r["ml_attributes"] == \"''' + ml_attributes + '''\" and r["mean"] == ''' + str(mean) + ''' and r["std_dev"] == ''' + str(std_dev) + ''')                                     
                     '''
+                print(query)
                 data_frame = self.query_api.query_data_frame(query)
                 check = len(data_frame)
                 print(check)
 
                 # First check and write model_path and model_attributes
                 if(check == 0):
+                    self.points =[]
                     point = Point("ConfigData")
                     point.measurement("ConfigData")
                     point.tag("Table", "ShopMLModelConfig")
                     point.tag("Tag1", "Shop")
-                    point.field("ml_attributes", "[]")
+                    point.field("ml_attributes", ml_attributes)
                     point.field("model_path", model_path)
                     point.field("model", "yes")
                     point.field("multiplier", "[1,2,3]")
                     point.field("pickle_path", model_path)
                     point.field("shop_id", shop_id)
                     point.field("synced", int(0))
+                    print(point)
                     self.points.append(point)
+                    self.write_api.write(bucket=self.bucket, org=self.org, record=self.points)
 
                     #Write type, mean, std_dev from ShopMLModelOp
+                    self.points =[]
                     point = Point("ConfigData")
                     point.measurement("ConfigData")
                     point.tag("Table", "ShopMLModelOp")
@@ -1175,13 +1155,15 @@ class DbService:
                     point.field("upper_limit", int(0))
                     point.field("lower_limit", int(0))
                     point.field("type", type)
-                    point.field("mean", mean)
+                    point.field("mean", float(mean))
                     point.field("shop_id", shop_id)
                     point.field("range_end", int(0))
                     point.field("range_start", int(0))
-                    point.field("std_dev", std_dev)
+                    point.field("std_dev", float(std_dev))
                     point.field("synced", int(0))
+                    print(point)
                     self.points.append(point)
+                    self.write_api.write(bucket=self.bucket, org=self.org, record=self.points)
                     return "Insertion successful"
                 else:
                     return "You are trying to insert duplicate values."
@@ -1192,53 +1174,34 @@ class DbService:
                 print("\nFailed to write shop ml config details from influx" + str(os.path.basename(__file__)) + str(ex))
                 self.LOG.ERROR(
                 "\nFailed to write shop ml config details from influx" + str(os.path.basename(__file__)) + str(ex))
-        pass        
+        pass
 
     def post_shiftconfig(self, data):
         try:
-            self.points = []
-            shift_title = data["shift_title"]
+            shift_schedule = data["shift_schedule"]
             _from = data["from"]
             _to = data["to"]
+            shift_title = data["shift_title"]
+            shift_id = str(uuid.uuid4())
 
             #Getting shift id from the shift name from ShiftConfig
             query = '''from(bucket: \"''' + self.bucket + '''\")
                         |> range(start: 0)
-                        |> filter(fn: (r) => r["_measurement"] == "ConfigData")
-                        |> filter(fn: (r) => r["Table"] == "ShiftConfig")
-                        |> filter(fn: (r) => r["Tag1"] == "Common")
-                        |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
-                        |> filter(fn: (r) => r["shift_title"] == \"''' + shift_title + '''\")                                        
-                    '''
-            print(query)
-            data_frame = self.query_api.query_data_frame(query)
-            check = len(data_frame)
-            print(check)
-            if(check == 0):
-                return "Provided shift title does not exist."
-            else:
-                data_frame.drop(['result', 'table'], axis=1, inplace=True)
-                df = pd.DataFrame(data_frame)
-                shift_id = df.loc[df['shift_title']==shift_title, 'shift_id'].values[0]
-                
-            # Checking and Writing the from and to from ShiftConfig
-            query = '''from(bucket: \"''' + self.bucket + '''\")
-                        |> range(start: 0)
-                        |> filter(fn: (r) => r["_measurement"] == "ConfigData")
-                        |> filter(fn: (r) => r["Table"] == "ShiftConfig")
-                        |> filter(fn: (r) => r["Tag1"] == "Common")
-                        |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
-                        |> filter(fn: (r) => r["from"] == \"''' + str(_from) + '''\" and r["to"] == \"''' + str(_to) + '''\")                                      
+                        |> filter(fn: (r) => r["_measurement"] == "ConfigData" and r["Tag1"] == "Common" and r["Table"] == "ShiftConfig")
+                        |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value") 
+                        |> filter(fn: (r) => r["from"] == ''' + str(_from) + ''' and r["to"] == ''' + str(_to) + ''' and r["shift_title"] == \"''' + shift_title + '''\" and r["shift_schedule"] == ''' + str(shift_schedule) + ''')                                        
                     '''
             print(query)
             data_frame = self.query_api.query_data_frame(query)
             check = len(data_frame)
             print(check)
             if(check==0):
+                self.points=[]
                 point = Point("ConfigData")
                 point.tag("Table", "ShiftConfig")
                 point.tag("Tag1", "Common")
-                point.tag("_measurement", "ConfigData")
+                point.field("shift_schedule", int(shift_schedule))
+                point.field("shift_title", shift_title)
                 point.field("shift_id", shift_id)
                 point.field("from", int(_from))
                 point.field("to", int(_to))
@@ -1246,7 +1209,6 @@ class DbService:
                 self.points.append(point)    
                 self.write_api.write(bucket=self.bucket, org=self.org, record=self.points)
                 return "Insertion successful."
-            
             else:
                 return "You are trying to insert duplicate values."
         
@@ -1258,7 +1220,6 @@ class DbService:
 
     def post_kpiconfig(self, data):
         try:
-            self.points = []
             range = data["range"]
             color = data["color"]
             id = str(uuid.uuid4())
@@ -1266,9 +1227,7 @@ class DbService:
             # Checking and Writing the range and color from KPIColorConfig
             query = '''from(bucket: \"''' + self.bucket + '''\")
                         |> range(start: 0)
-                        |> filter(fn: (r) => r["_measurement"] == "ConfigData")
-                        |> filter(fn: (r) => r["Table"] == "KPIColorConfig")
-                        |> filter(fn: (r) => r["Tag1"] == "Commmon")
+                        |> filter(fn: (r) => r["_measurement"] == "ConfigData" and r["Tag1"] == "Common" and r["Table"] == "KPIColorConfig")
                         |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
                         |> filter(fn: (r) => r["range"] == \"''' + range + '''\" and r["color"] == \"''' + color + '''\")                                      
                     '''
@@ -1277,10 +1236,10 @@ class DbService:
             check = len(data_frame)
             print(check)
             if(check==0):
+                self.points = []
                 point = Point("ConfigData")
-                point.tag("Table", "ShiftConfig")
+                point.tag("Table", "KPIColorConfig")
                 point.tag("Tag1", "Common")
-                point.tag("_measurement", "ConfigData")
                 point.field("range", range)
                 point.field("color", color)
                 point.field("id", id)
@@ -1300,25 +1259,11 @@ class DbService:
     
     def post_emailconfig(self, data):
         try:
-            self.points = []
+            # shop_no = data["shop_no"]
             enable = data["enable"]
             email_id = data["email_id"]
             priority = data["priority"]
             shop_id = str(uuid.uuid4())
-                
-            # Checking and Writing the enable, email_id, priority from EmailNotificationConfig
-            query = '''from(bucket: \"''' + self.bucket + '''\")
-                        |> range(start: 0)
-                        |> filter(fn: (r) => r["_measurement"] == "ConfigData")
-                        |> filter(fn: (r) => r["Table"] == "EmailNotificationConfig")
-                        |> filter(fn: (r) => r["Tag1"] == "Commmon")
-                        |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
-                        |> filter(fn: (r) => r["enable"] == \"''' + enable + '''\" and r["email_id"] == \"''' + email_id + '''\" and r["priority"] == \"''' + priority + '''\")                                      
-                    '''
-            print(query)
-            data_frame = self.query_api.query_data_frame(query)
-            check = len(data_frame)
-            print(check)
 
             if(enable=="Enable"):
                 value = "yes"
@@ -1326,18 +1271,31 @@ class DbService:
                 value = "no"
             else:
                 return "You can only write either Enable or Disable"
+                
+            # Checking and Writing the enable, email_id, priority from EmailNotificationConfig
+            query = '''from(bucket: \"''' + self.bucket + '''\")
+                        |> range(start: 0)
+                        |> filter(fn: (r) => r["_measurement"] == "ConfigData" and r["Tag1"] == "Common" and r["Table"] == "EmailNotificationConfig")
+                        |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+                        |> filter(fn: (r) => r["enable"] == \"''' + value + '''\" and r["email_id"] == \"''' + email_id + '''\" and r["priority"] == \"''' + priority + '''\" )                                      
+                    '''
+            print(query)
+            data_frame = self.query_api.query_data_frame(query)
+            check = len(data_frame)
+            print(check)
             
             if(check==0):
+                self.points = []
                 point = Point("ConfigData")
-                point.tag("Table", "ShiftConfig")
+                point.tag("Table", "EmailNotificationConfig")
                 point.tag("Tag1", "Common")
-                point.tag("_measurement", "ConfigData")
                 point.field("email_id", email_id)
                 point.field("enable", value)
                 point.field("priority", priority)
                 point.field("shop_id", shop_id)
                 point.field("synced", int(0))
                 self.points.append(point)    
+                print(self.points)
                 self.write_api.write(bucket=self.bucket, org=self.org, record=self.points)
                 return "Insertion successful."
             
@@ -1352,25 +1310,11 @@ class DbService:
 
     def post_whatsappconfig(self, data):
         try:
-            self.points = []
             enable = data["enable"]
             whatsapp_id = data["whatsapp_id"]
             priority = data["priority"]
+
             shop_id = str(uuid.uuid4())
-                
-            # Checking and Writing the enable, whatsapp_id, priority from WhatsappNotificationConfig
-            query = '''from(bucket: \"''' + self.bucket + '''\")
-                        |> range(start: 0)
-                        |> filter(fn: (r) => r["_measurement"] == "ConfigData")
-                        |> filter(fn: (r) => r["Table"] == "WhatsappNotificationConfig")
-                        |> filter(fn: (r) => r["Tag1"] == "Commmon")
-                        |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
-                        |> filter(fn: (r) => r["enable"] == \"''' + enable + '''\" and r["whatsapp_id"] == \"''' + whatsapp_id + '''\" and r["priority"] == \"''' + priority + '''\")                                      
-                    '''
-            print(query)
-            data_frame = self.query_api.query_data_frame(query)
-            check = len(data_frame)
-            print(check)
 
             if(enable=="Enable"):
                 value = "yes"
@@ -1378,18 +1322,31 @@ class DbService:
                 value = "no"
             else:
                 return "You can only write either Enable or Disable"
+                
+            # Checking and Writing the enable, whatsapp_id, priority from WhatsappNotificationConfig
+            query = '''from(bucket: \"''' + self.bucket + '''\")
+                        |> range(start: 0)
+                        |> filter(fn: (r) => r["_measurement"] == "ConfigData" and r["Tag1"] == "Common" and r["Table"] == "WhatsappNotificationConfig")
+                        |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+                        |> filter(fn: (r) => r["enable"] == \"''' + value + '''\" and r["whatsapp_id"] == \"''' + whatsapp_id + '''\" and r["priority"] == \"''' + priority + '''\" )                                      
+                    '''
+            print(query)
+            data_frame = self.query_api.query_data_frame(query)
+            check = len(data_frame)
+            print(check)
             
             if(check==0):
+                self.points = []
                 point = Point("ConfigData")
-                point.tag("Table", "ShiftConfig")
+                point.tag("Table", "WhatsappNotificationConfig")
                 point.tag("Tag1", "Common")
-                point.tag("_measurement", "ConfigData")
                 point.field("whatsapp_id", whatsapp_id)
                 point.field("enable", value)
                 point.field("priority", priority)
                 point.field("shop_id", shop_id)
                 point.field("synced", int(0))
                 self.points.append(point)    
+                print(self.points)
                 self.write_api.write(bucket=self.bucket, org=self.org, record=self.points)
                 return "Insertion successful."
             
@@ -1426,18 +1383,20 @@ class DbService:
             data_frame = self.query_api.query_data_frame(query)
             data_frame.drop(['result', 'table'], axis=1, inplace=True)
             df = pd.DataFrame(data_frame)
-            # time = df.get("_time")
-            time = df.loc[df['asset_id']==asset_id, '_time'].values[0]
-            # time = df.loc[0, "_time"]
+            # time = df.loc[df['asset_id']==asset_id, '_time'].values[0]
+            temptime = df.loc[0, "_time"]
+            time = datetime.strftime(temptime, "%Y-%m-%dT%H:%M:%SZ")
             # print(time)
+            self.points = []
             point = Point("ConfigData")
             point.tag("Table", "AssetConfig")
             point.tag("Tag1", "Asset")
             point.field("asset_name", asset_name)
             point.time(time)
             print(point)
+            self.points.append(point)    
             # points.append(point)
-            self.write_api.write(bucket=self.bucket, org=self.org, record= point)
+            self.write_api.write(bucket=self.bucket, org=self.org, record= self.points)
             print("Asset value updated")
 
             # Updating the shop name from ShopConfig
@@ -1455,16 +1414,19 @@ class DbService:
             df = pd.DataFrame(data_frame)
             # time = df.get("_time")
             # time = df.loc[df['shop_id']==shop_id, '_time'].values[0]
-            time = df.loc[0, "_time"]
+            temptime = df.loc[0, "_time"]
+            time = datetime.strftime(temptime, "%Y-%m-%dT%H:%M:%SZ")
             # print(time)
+            self.points = []
             point = Point("ConfigData")
             point.tag("Table", "ShopConfig")
             point.tag("Tag1", "Shop")
             point.field("shop_name", shop_name)
             point.time(time)
             print(point)
+            self.points.append(point)    
             # points.append(point)
-            self.write_api.write(bucket=self.bucket, org=self.org, record= point)
+            self.write_api.write(bucket=self.bucket, org=self.org, record= self.points)
             print("Shop value updated")
 
             # Updating the factory name from FactoryConfig
@@ -1482,16 +1444,19 @@ class DbService:
             df = pd.DataFrame(data_frame)
             # time = df.get("_time")
             # time = df.loc[df['factory_id']==factory_id, '_time'].values[0]
-            time = df.loc[0, "_time"]
-            # print(time)
+            temptime = df.loc[0, "_time"]
+            time = datetime.strftime(temptime, "%Y-%m-%dT%H:%M:%SZ")
+            print(time)
+            self.points = []
             point = Point("ConfigData")
             point.tag("Table", "FactoryConfig")
             point.tag("Tag1", "Factory")
             point.field("factory_name", factory_name)
             point.time(time)
             print(point)
+            self.points.append(point)    
             # points.append(point)
-            self.write_api.write(bucket=self.bucket, org=self.org, record= point)
+            self.write_api.write(bucket=self.bucket, org=self.org, record= self.points)
 
             # Updating the org name from OrgConfig
             query = '''from(bucket: \"''' + self.bucket + '''\")
@@ -1508,16 +1473,19 @@ class DbService:
             df = pd.DataFrame(data_frame)
             # time = df.get("_time")
             # time = df.loc[df['org_id']==org_id, '_time'].values[0]
-            time = df.loc[0, "_time"]
+            temptime = df.loc[0, "_time"]
+            time = datetime.strftime(temptime, "%Y-%m-%dT%H:%M:%SZ")
             # print(time)
+            self.points = []
             point = Point("ConfigData")
             point.tag("Table", "OrgConfig")
             point.tag("Tag1", "Org")
             point.field("org_name", org_name)
             point.time(time)
             print(point)
+            self.points.append(point)    
             # points.append(point)
-            self.write_api.write(bucket=self.bucket, org=self.org, record= point)
+            self.write_api.write(bucket=self.bucket, org=self.org, record= self.points)
             return "Values updated successfully"
         except Exception as ex:
             print("\nFailed to update asset config details from influx: " + str(os.path.basename(__file__)) + str(ex))
@@ -1528,36 +1496,8 @@ class DbService:
     def put_assetattributes(self, data):
         try:
             self.points = []
-            # asset_name = data["asset_name"]
-            # asset_id = data["asset_id"]
             attribute_name = data["attribute_name"]
             assetattribute_id = data["assetattribute_id"]
-
-            # # Updating the asset name from AssetConfig
-            # query = '''from(bucket: \"''' + self.bucket + '''\")
-            #             |> range(start: 0)
-            #             |> filter(fn: (r) => r["_measurement"] == "ConfigData")
-            #             |> filter(fn: (r) => r["Table"] == "AssetConfig")
-            #             |> filter(fn: (r) => r["Tag1"] == "Asset")
-            #             |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
-            #             |> filter(fn: (r) => r["asset_id"] == \"''' + asset_id + '''\")
-            #             '''
-            
-            # data_frame = self.query_api.query_data_frame(query)
-            # data_frame.drop(['result', 'table'], axis=1, inplace=True)
-            # df = pd.DataFrame(data_frame)
-            # # time = df.get("_time")
-            # # time = df.loc[df['asset_id']==asset_id, '_time'].values[0]
-            # time = df.loc[0, "_time"]
-            # # print(time)
-            # point = Point("ConfigData")
-            # point.tag("Table", "AssetConfig")
-            # point.tag("Tag1", "Asset")
-            # point.field("asset_name", asset_name)
-            # point.time(time)
-            # # print(point)
-            # # points.append(point)
-            # self.write_api.write(bucket=self.bucket, org=self.org, record= point)
 
             # Updating the attribute name from AssetAttributes
             query = '''from(bucket: \"''' + self.bucket + '''\")
@@ -1573,18 +1513,20 @@ class DbService:
             data_frame = self.query_api.query_data_frame(query)
             data_frame.drop(['result', 'table'], axis=1, inplace=True)
             df = pd.DataFrame(data_frame)
-            # time = df.get("_time")
-            # time = df.loc[df['attribute_id']==attribute_id, '_time'].values[0]
-            time = df.loc[0, "_time"]
-            # print(time)
+            # temptime = df.loc[df['assetattribute_id'] == assetattribute_id, '_time'].values[0]
+            temptime = df.loc[0, "_time"]
+            time = datetime.strftime(temptime, "%Y-%m-%dT%H:%M:%SZ")
+            print(time)
+            self.points = []
             point = Point("ConfigData")
             point.tag("Table", "AssetAttributes")
             point.tag("Tag1", "Asset")
             point.field("attribute_name", attribute_name)
             point.time(time)
+            self.points.append(point)    
             # print(point)
             # points.append(point)
-            self.write_api.write(bucket=self.bucket, org=self.org, record= point)
+            self.write_api.write(bucket=self.bucket, org=self.org, record= self.points)
             return "Values updated successfully"
         
         except Exception as ex:
@@ -1593,40 +1535,11 @@ class DbService:
                 "\nFailed to update asset attributes details from influx" + str(os.path.basename(__file__)) + str(ex))
             pass
 
-
     def put_shopattributes(self, data):
         try:
             self.points = []
-            # shop_name = data["shop_name"]
-            # shop_id = data["shop_id"]
             attribute_name = data["attribute_name"]
             shopattribute_id = data["shopattribute_id"]
-
-            # # Updating the shop name from ShopConfig
-            # query = '''from(bucket: \"''' + self.bucket + '''\")
-            #             |> range(start: 0)
-            #             |> filter(fn: (r) => r["_measurement"] == "ConfigData")
-            #             |> filter(fn: (r) => r["Table"] == "ShopConfig")
-            #             |> filter(fn: (r) => r["Tag1"] == "Shop")
-            #             |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
-            #             |> filter(fn: (r) => r["shop_id"] == \"''' + shop_id + '''\")
-            #             '''
-            
-            # data_frame = self.query_api.query_data_frame(query)
-            # data_frame.drop(['result', 'table'], axis=1, inplace=True)
-            # df = pd.DataFrame(data_frame)
-            # # time = df.get("_time")
-            # # time = df.loc[df['shop_id']==shop_id, '_time'].values[0]
-            # time = df.loc[0, "_time"]
-            # # print(time)
-            # point = Point("ConfigData")
-            # point.tag("Table", "ShopConfig")
-            # point.tag("Tag1", "Shop")
-            # point.field("shop_name", shop_name)
-            # point.time(time)
-            # # print(point)
-            # # points.append(point)
-            # self.write_api.write(bucket=self.bucket, org=self.org, record= point)
 
             # Updating the attribute name from ShopAttributes
             query = '''from(bucket: \"''' + self.bucket + '''\")
@@ -1642,18 +1555,20 @@ class DbService:
             data_frame = self.query_api.query_data_frame(query)
             data_frame.drop(['result', 'table'], axis=1, inplace=True)
             df = pd.DataFrame(data_frame)
-            # time = df.get("_time")
-            # time = df.loc[df['attribute_id']==attribute_id, '_time'].values[0]
-            time = df.loc[0, "_time"]
-            # print(time)
+            # temptime = df.loc[df['shopattribute_id'] == shopattribute_id, '_time'].values[0]
+            temptime = df.loc[0, "_time"]
+            time = datetime.strftime(temptime, "%Y-%m-%dT%H:%M:%SZ")
+            print(time)
+            self.points = []
             point = Point("ConfigData")
             point.tag("Table", "ShopAttributes")
             point.tag("Tag1", "Shop")
             point.field("attribute_name", attribute_name)
             point.time(time)
+            self.points.append(point)    
             # print(point)
             # points.append(point)
-            self.write_api.write(bucket=self.bucket, org=self.org, record= point)
+            self.write_api.write(bucket=self.bucket, org=self.org, record= self.points)
             return "Values updated successfully"
         
         except Exception as ex:
@@ -1664,6 +1579,7 @@ class DbService:
 
     def put_assetfaultruleconfig(self, data):
         try:
+            self.points=[]
             condition = data["condition"]
             alert = data["alert"]
             action = data["action"]
@@ -1682,22 +1598,21 @@ class DbService:
             data_frame = self.query_api.query_data_frame(query)
             data_frame.drop(['result', 'table'], axis=1, inplace=True)
             df = pd.DataFrame(data_frame)
-            # time = df.get("_time")
-            # time = df.loc[df['attribute_id']==attribute_id, '_time'].values[0]
-            time = df.loc[0, "_time"]
+            # time = df.loc[df['rule_id']==rule_id, '_time'].values[0]
+            temptime = df.loc[0, "_time"]
+            time = datetime.strftime(temptime, "%Y-%m-%dT%H:%M:%SZ")
             # print(time)
             point = Point("ConfigData")
             point.tag("Table", "AssetFaultRuleConfig")
             point.tag("Tag1", "Asset")
-            # point.field("asset_name", asset_name)
+            point.time(time)
             point.field("condition", condition)
             point.field("alert", alert)
             point.field("action", action)
-            point.time(time)
-            # print(point)
+            self.points.append(point)    
+            print(point)
             # points.append(point)
-            self.write_api.write(bucket=self.bucket, org=self.org, record= point)
-        
+            self.write_api.write(bucket=self.bucket, org=self.org, record= self.points)
             return "Values updated successfully"
         except Exception as ex:
             print("\nFailed to update asset fault rule details from influx" + str(os.path.basename(__file__)) + str(ex))
@@ -1705,148 +1620,161 @@ class DbService:
                 "\nFailed to update asset fault rule details from influx" + str(os.path.basename(__file__)) + str(ex))
             pass
 
-    def put_assetmlconfig(self, data):
+    def put_shiftconfig(self, data):
         try:
-            self.points = []
-            asset_name = data["asset_name"]
-            model = data["model"]
-            
-            #Getting asset id from the asset name from AssetConfig
+            _from = data["from"]
+            _to = data["to"]
+            shift_id = data["shift_id"]
+
+            #Getting shift id from the shift name from ShiftConfig
             query = '''from(bucket: \"''' + self.bucket + '''\")
                         |> range(start: 0)
-                        |> filter(fn: (r) => r["_measurement"] == "ConfigData")
-                        |> filter(fn: (r) => r["Table"] == "AssetConfig")
-                        |> filter(fn: (r) => r["Tag1"] == "Asset")
-                        |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
-                        |> filter(fn: (r) => r["asset_name"] == \"''' + asset_name + '''\")                                        
+                        |> filter(fn: (r) => r["_measurement"] == "ConfigData" and r["Tag1"] == "Common" and r["Table"] == "ShiftConfig")
+                        |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value") 
+                        |> filter(fn: (r) => r["shift_id"] == \"''' + shift_id + '''\")                                        
                     '''
-            
+            print(query)
             data_frame = self.query_api.query_data_frame(query)
-            check = len(data_frame)
-            print(check)
-            if(check == 0):
-                return "Provided asset name does not exist."
-            else:
-                data_frame.drop(['result', 'table'], axis=1, inplace=True)
-                df = pd.DataFrame(data_frame)
-                asset_id = df.loc[df['asset_name']==asset_name, 'asset_id'].values[0]
-
-            #If model is not present
-            if(model == "no"):
-                upper_limit = data["upper_limit"]
-                lower_limit = data["lower_limit"]
-                print(upper_limit)
-                type = data["type"]
-                asset_id = str(uuid.uuid4())
-
-                query = '''from(bucket: \"''' + self.bucket + '''\")
-                        |> range(start: 0)
-                        |> filter(fn: (r) => r["_measurement"] == "ConfigData")
-                        |> filter(fn: (r) => r["Table"] == "AssetMLModelOp")
-                        |> filter(fn: (r) => r["Tag1"] == "Asset")
-                        |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
-                        |> filter(fn: (r) => r["upper_limit"] == ''' + str(upper_limit) + ''' and r["lower_limit"] == ''' + str(lower_limit) + ''' and r["type"] == \"''' + type + '''\" )                                     
-                    '''
-                print(query)
-                data_frame = self.query_api.query_data_frame(query)
-                check = len(data_frame)
-                print(check)
-
-                # If unique values are provided, write points to table
-                if(check == 0):
-                    # Write model = no against newly formed asset_id in ML model config
-                    point = Point("ConfigData")
-                    point.tag("Table", "AssetMLModelConfig")
-                    point.tag("Tag1", "Asset")
-                    point.field("asset_id", asset_id)
-                    point.field("model", "no")
-                    self.points.append(point)
-                    print(point)
-                    print(self.points)
-                    self.write_api.write(bucket=self.bucket, org=self.org, record=self.points)
-
-                    #Write asset_id, type, upper_limit and lower_limit in ML model Op
-                    point = Point("ConfigData")
-                    point.tag("Table", "AssetMLModelOp")
-                    point.tag("Tag1", "Asset")
-                    point.field("upper_limit", upper_limit)
-                    point.field("lower_limit", lower_limit)
-                    point.field("type", type)
-                    point.field("asset_id", asset_id)
-                    point.field("mean", int(0))
-                    # point.field("range_end", int(0))
-                    # point.field("range_start", int(0))
-                    point.field("std_dev", int(0))
-                    point.field("synced", int(0))
-                    self.points.append(point)
-                    print(point)
-                    print(self.points)
-                    self.write_api.write(bucket=self.bucket, org=self.org, record=self.points)
-                    return "Insertion successful"
-            # If model is present
-            elif(model == "yes"):
-                #Checking and writing ml_attributes and model_path from AssetMLModelConfig
-                model_path = data["model_path"]
-                type = data["type"]
-                std_dev = data["std_dev"]
-                mean = data["mean"]
-
-                mean = float(mean)
-                std_dev = float(std_dev)
-
-                query = '''from(bucket: \"''' + self.bucket + '''\")
-                        |> range(start: 0)
-                        |> filter(fn: (r) => r["_measurement"] == "ConfigData")
-                        |> filter(fn: (r) => r["Table"] == "AssetMLModelConfig")
-                        |> filter(fn: (r) => r["Tag1"] == "Asset")
-                        |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
-                        |> filter(fn: (r) => r["model_path"] == \"''' + model_path + '''\")                                     
-                    '''
-                data_frame = self.query_api.query_data_frame(query)
-                check = len(data_frame)
-                print(check)
-
-                # First check and write model_path and model_attributes
-                if(check == 0):
-                    point = Point("ConfigData")
-                    point.measurement("ConfigData")
-                    point.tag("Table", "AssetMLModelConfig")
-                    point.tag("Tag1", "Asset")
-                    point.field("ml_attributes", "[]")
-                    point.field("model_path", model_path)
-                    point.field("model", "yes")
-                    point.field("multiplier", "[1,2,3]")
-                    point.field("pickle_path", model_path)
-                    point.field("asset_id", asset_id)
-                    point.field("synced", int(0))
-                    self.points.append(point)
-
-                    #Write type, mean, std_dev from AssetMLModelOp
-                    point = Point("ConfigData")
-                    point.measurement("ConfigData")
-                    point.tag("Table", "AssetMLModelOp")
-                    point.tag("Tag1", "Asset")
-                    point.field("upper_limit", int(0))
-                    point.field("lower_limit", int(0))
-                    point.field("type", type)
-                    point.field("mean", mean)
-                    point.field("asset_id", asset_id)
-                    point.field("range_end", int(0))
-                    point.field("range_start", int(0))
-                    point.field("std_dev", std_dev)
-                    point.field("synced", int(0))
-                    self.points.append(point)
-                    return "Insertion successful"
-                else:
-                    return "You are trying to insert duplicate values."
-            else:
-                return "ERROR: Case Sensitive, Please write either yes or no only for model field."
-
+            data_frame.drop(['result', 'table'], axis=1, inplace=True)
+            df = pd.DataFrame(data_frame)
+            # time = df.loc[df['shift_id']==shift_id, '_time'].values[0]
+            temptime = df.loc[0, "_time"]
+            time = datetime.strftime(temptime, "%Y-%m-%dT%H:%M:%SZ")
+            self.points=[]
+            point = Point("ConfigData")
+            point.tag("Table", "ShiftConfig")
+            point.tag("Tag1", "Common")
+            point.field("from", int(_from))
+            point.field("to", int(_to))
+            point.field("synced", int(0))
+            point.time(time)
+            self.points.append(point)    
+            self.write_api.write(bucket=self.bucket, org=self.org, record=self.points)
+            return "Values updated successful."
+        
         except Exception as ex:
-                print("\nFailed to write asset ml config details from influx" + str(os.path.basename(__file__)) + str(ex))
-                self.LOG.ERROR(
-                "\nFailed to write asset ml config details from influx" + str(os.path.basename(__file__)) + str(ex))
-        pass
+            print("\nFailed to update kpi config details from influx" + str(os.path.basename(__file__)) + str(ex))
+            self.LOG.ERROR(
+                "\nFailed to update kpi config details from influx" + str(os.path.basename(__file__)) + str(ex))
+            pass
+        
+
+    def put_kpiconfig(self, data):
+        try:
+            self.points = []
+            id = data["id"]
+            range = data["range"]
+            color = data["color"]
+                
+            # Checking and Writing the range and color from KPIColorConfig
+            query = '''from(bucket: \"''' + self.bucket + '''\")
+                        |> range(start: 0)
+                        |> filter(fn: (r) => r["_measurement"] == "ConfigData" and r["Tag1"] == "Common" and r["Table"] == "KPIColorConfig")
+                        |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+                        |> filter(fn: (r) => r["id"] == \"''' + id + '''\")                                      
+                    '''
+            print(query)
+            data_frame = self.query_api.query_data_frame(query)
+            data_frame.drop(['result', 'table'], axis=1, inplace=True)
+            df = pd.DataFrame(data_frame)
+            # time = df.loc[df['id']==id, '_time'].values[0]
+            temptime = df.loc[0, "_time"]
+            time = datetime.strftime(temptime, "%Y-%m-%dT%H:%M:%SZ")
+            point = Point("ConfigData")
+            point.tag("Table", "KPIColorConfig")
+            point.tag("Tag1", "Common")
+            point.time(time)
+            point.field("range", range)
+            point.field("color", color)  
+            self.points.append(point)    
+            self.write_api.write(bucket=self.bucket, org=self.org, record=self.points)
+            return "Values updated successful."
+            
+        except Exception as ex:
+            print("\nFailed to update kpi config details from influx" + str(os.path.basename(__file__)) + str(ex))
+            self.LOG.ERROR(
+                "\nFailed to update kpi config details from influx" + str(os.path.basename(__file__)) + str(ex))
+            pass
+
+    def put_emailconfig(self, data):
+        try:
+            self.points = []
+            enable = data["enable"]
+            email_id = data["email_id"]
+            priority = data["priority"]
+            shop_id = data["shop_id"]
+                
+            # Checking and Writing the range and color from EmailNotificationConfig
+            query = '''from(bucket: \"''' + self.bucket + '''\")
+                        |> range(start: 0)
+                        |> filter(fn: (r) => r["_measurement"] == "ConfigData" and r["Tag1"] == "Common" and r["Table"] == "EmailNotificationConfig")
+                        |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+                        |> filter(fn: (r) => r["shop_id"] == \"''' + shop_id + '''\")                                      
+                    '''
+            print(query)
+            data_frame = self.query_api.query_data_frame(query)
+            data_frame.drop(['result', 'table'], axis=1, inplace=True)
+            df = pd.DataFrame(data_frame)
+            # time = df.loc[df['shop_id']==shop_id, '_time'].values[0]
+            temptime = df.loc[0, "_time"]
+            time = datetime.strftime(temptime, "%Y-%m-%dT%H:%M:%SZ")
+
+            point = Point("ConfigData")
+            point.tag("Table", "EmailNotificationConfig")
+            point.tag("Tag1", "Common")
+            point.time(time)
+            point.field("email_id", email_id) 
+            point.field("enable", enable) 
+            point.field("priority", priority)
+            self.points.append(point)    
+            self.write_api.write(bucket=self.bucket, org=self.org, record=self.points)
+            return "Values updated successful."
+            
+        except Exception as ex:
+            print("\nFailed to update kpi config details from influx" + str(os.path.basename(__file__)) + str(ex))
+            self.LOG.ERROR(
+                "\nFailed to update kpi config details from influx" + str(os.path.basename(__file__)) + str(ex))
+            pass
+
+    def put_whatsappconfig(self, data):
+        try:
+            self.points = []
+            enable = data["enable"]
+            whatsapp_id = data["whatsapp_id"]
+            priority = data["priority"]
+            shop_id = data["shop_id"]
+                
+            # Checking and Writing the range and color from WhatsappNotificationConfig
+            query = '''from(bucket: \"''' + self.bucket + '''\")
+                        |> range(start: 0)
+                        |> filter(fn: (r) => r["_measurement"] == "ConfigData" and r["Tag1"] == "Common" and r["Table"] == "WhatsappNotificationConfig")
+                        |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+                        |> filter(fn: (r) => r["shop_id"] == \"''' + shop_id + '''\")                                      
+                    '''
+            print(query)
+            data_frame = self.query_api.query_data_frame(query)
+            data_frame.drop(['result', 'table'], axis=1, inplace=True)
+            df = pd.DataFrame(data_frame)
+            # time = df.loc[df['shop_id']==shop_id, '_time'].values[0]
+            temptime = df.loc[0, "_time"]
+            time = datetime.strftime(temptime, "%Y-%m-%dT%H:%M:%SZ")
+
+            point = Point("ConfigData")
+            point.tag("Table", "WhatsappNotificationConfig")
+            point.tag("Tag1", "Common")
+            point.time(time)
+            point.field("whatsapp_id", whatsapp_id) 
+            point.field("enable", enable) 
+            point.field("priority", priority)
+            self.points.append(point)    
+            self.write_api.write(bucket=self.bucket, org=self.org, record=self.points)
+            return "Values updated successful."
+            
+        except Exception as ex:
+            print("\nFailed to update kpi config details from influx" + str(os.path.basename(__file__)) + str(ex))
+            self.LOG.ERROR(
+                "\nFailed to update kpi config details from influx" + str(os.path.basename(__file__)) + str(ex))
+            pass
 
     def delete_assetconfig(self, data):
         try:
@@ -1869,9 +1797,9 @@ class DbService:
             data_frame = self.query_api.query_data_frame(query)
             data_frame.drop(['result', 'table'], axis=1, inplace=True)
             df = pd.DataFrame(data_frame)
-            # time = df.get("_time")
             # time = df.loc[df['asset_id']==asset_id, '_time'].values[0]
-            time = df.loc[0, "_time"]
+            temptime = df.loc[0, "_time"]
+            time = datetime.strftime(temptime, "%Y-%m-%dT%H:%M:%SZ")
             # print(time)
             # current_time = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
             delete_api= self.client.delete_api()
@@ -1892,7 +1820,8 @@ class DbService:
             df = pd.DataFrame(data_frame)
             # time = df.get("_time")
             # time = df.loc[df['shop_id']==shop_id, '_time'].values[0]
-            time = df.loc[0, "_time"]
+            temptime = df.loc[0, "_time"]
+            time = datetime.strftime(temptime, "%Y-%m-%dT%H:%M:%SZ")
             # print(time)
             # current_time = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
             delete_api= self.client.delete_api()
@@ -1913,7 +1842,8 @@ class DbService:
             df = pd.DataFrame(data_frame)
             # time = df.get("_time")
             # time = df.loc[df['factory_id']==factory_id, '_time'].values[0]
-            time = df.loc[0, "_time"]
+            temptime = df.loc[0, "_time"]
+            time = datetime.strftime(temptime, "%Y-%m-%dT%H:%M:%SZ")
             # print(time)
             # current_time = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
             delete_api= self.client.delete_api()
@@ -1934,11 +1864,12 @@ class DbService:
             df = pd.DataFrame(data_frame)
             # time = df.get("_time")
             # time = df.loc[df['org_id']==org_id, '_time'].values[0]
-            time = df.loc[0, "_time"]
+            temptime = df.loc[0, "_time"]
+            time = datetime.strftime(temptime, "%Y-%m-%dT%H:%M:%SZ")
             # print(time)
             # current_time = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
             delete_api= self.client.delete_api()
-            delete_api.delete(start = time, stop=time, predicate='_measurement = "ConfigData"',bucket=self.bucket, org=self.org)
+            delete_api.delete(start = time, stop= time, predicate='_measurement = "ConfigData"',bucket=self.bucket, org=self.org)
             return "Values deleted successfully"
         except Exception as ex:
             print("\nFailed to delete asset config details from influx: " + str(os.path.basename(__file__)) + str(ex))
@@ -1965,7 +1896,8 @@ class DbService:
             data_frame.drop(['result', 'table'], axis=1, inplace=True)
             df = pd.DataFrame(data_frame)
             # time = df.get("_time")
-            time = df.loc[df['asset_id']==asset_id, '_time'].values[0]
+            temptime = df.loc[0, "_time"]
+            time = datetime.strftime(temptime, "%Y-%m-%dT%H:%M:%SZ")
             # time = df.loc[0, "_time"]
             # print(time)
             # current_time = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
@@ -1986,7 +1918,8 @@ class DbService:
             data_frame.drop(['result', 'table'], axis=1, inplace=True)
             df = pd.DataFrame(data_frame)
             # time = df.get("_time")
-            time = df.loc[df['attribute_id']==attribute_id, '_time'].values[0]
+            temptime = df.loc[0, "_time"]
+            time = datetime.strftime(temptime, "%Y-%m-%dT%H:%M:%SZ")
             # time = df.loc[0, "_time"]
             # print(time)
             # current_time = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
@@ -2018,7 +1951,8 @@ class DbService:
             data_frame.drop(['result', 'table'], axis=1, inplace=True)
             df = pd.DataFrame(data_frame)
             # time = df.get("_time")
-            time = df.loc[df['shop_id']==shop_id, '_time'].values[0]
+            temptime = df.loc[0, "_time"]
+            time = datetime.strftime(temptime, "%Y-%m-%dT%H:%M:%SZ")
             # time = df.loc[0, "_time"]
             # print(time)
             # current_time = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
@@ -2039,7 +1973,8 @@ class DbService:
             data_frame.drop(['result', 'table'], axis=1, inplace=True)
             df = pd.DataFrame(data_frame)
             # time = df.get("_time")
-            time = df.loc[df['attribute_id']==attribute_id, '_time'].values[0]
+            temptime = df.loc[0, "_time"]
+            time = datetime.strftime(temptime, "%Y-%m-%dT%H:%M:%SZ")
             # time = df.loc[0, "_time"]
             # print(time)
             # current_time = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
@@ -2071,7 +2006,8 @@ class DbService:
             df = pd.DataFrame(data_frame)
             # time = df.get("_time")
             # time = df.loc[df['rule_id']==rule_id, '_time'].values[0]
-            time = df.loc[0, "_time"]
+            temptime = df.loc[0, "_time"]
+            time = datetime.strftime(temptime, "%Y-%m-%dT%H:%M:%SZ")
             # print(time)
             # current_time = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
             delete_api= self.client.delete_api()
@@ -2084,3 +2020,130 @@ class DbService:
                 "\nFailed to delete asset fault rule details from influx" + str(os.path.basename(__file__)) + str(ex))
             pass
 
+    def delete_shiftconfig(self, data):
+        try:
+            shift_id = data["shift_id"]
+
+            #Getting shift id from the shift name from ShiftConfig
+            query = '''from(bucket: \"''' + self.bucket + '''\")
+                        |> range(start: 0)
+                        |> filter(fn: (r) => r["_measurement"] == "ConfigData" and r["Tag1"] == "Common" and r["Table"] == "ShiftConfig")
+                        |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value") 
+                        |> filter(fn: (r) => r["shift_id"] == \"''' + shift_id + '''\")                                        
+                    '''
+            print(query)
+            data_frame = self.query_api.query_data_frame(query)
+            data_frame.drop(['result', 'table'], axis=1, inplace=True)
+            df = pd.DataFrame(data_frame)
+            # time = df.get("_time")
+            # time = df.loc[df['rule_id']==rule_id, '_time'].values[0]
+            temptime = df.loc[0, "_time"]
+            time = datetime.strftime(temptime, "%Y-%m-%dT%H:%M:%SZ")
+            # print(time)
+            # current_time = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+            delete_api= self.client.delete_api()
+            delete_api.delete(start = time, stop=time, predicate='_measurement = "ConfigData"',bucket=self.bucket, org=self.org)
+            return "Values deleted successfully"
+        
+        except Exception as ex:
+            print("\nFailed to update kpi config details from influx" + str(os.path.basename(__file__)) + str(ex))
+            self.LOG.ERROR(
+                "\nFailed to update kpi config details from influx" + str(os.path.basename(__file__)) + str(ex))
+            pass
+        
+
+    def delete_kpiconfig(self, data):
+        try:
+            self.points = []
+            id = data["id"]
+                
+            # Checking and Writing the range and color from KPIColorConfig
+            query = '''from(bucket: \"''' + self.bucket + '''\")
+                        |> range(start: 0)
+                        |> filter(fn: (r) => r["_measurement"] == "ConfigData" and r["Tag1"] == "Common" and r["Table"] == "KPIColorConfig")
+                        |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+                        |> filter(fn: (r) => r["id"] == \"''' + id + '''\")                                      
+                    '''
+            print(query)
+            data_frame = self.query_api.query_data_frame(query)
+            data_frame.drop(['result', 'table'], axis=1, inplace=True)
+            df = pd.DataFrame(data_frame)
+            # time = df.get("_time")
+            # time = df.loc[df['rule_id']==rule_id, '_time'].values[0]
+            temptime = df.loc[0, "_time"]
+            time = datetime.strftime(temptime, "%Y-%m-%dT%H:%M:%SZ")
+            # print(time)
+            # current_time = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+            delete_api= self.client.delete_api()
+            delete_api.delete(start = time, stop=time, predicate='_measurement = "ConfigData"',bucket=self.bucket, org=self.org)
+            return "Values deleted successfully"
+            
+        except Exception as ex:
+            print("\nFailed to update kpi config details from influx" + str(os.path.basename(__file__)) + str(ex))
+            self.LOG.ERROR(
+                "\nFailed to update kpi config details from influx" + str(os.path.basename(__file__)) + str(ex))
+            pass
+
+    def delete_emailconfig(self, data):
+        try:
+            self.points = []
+            shop_id = data["shop_id"]
+                
+            # Checking and Writing the range and color from EmailNotificationConfig
+            query = '''from(bucket: \"''' + self.bucket + '''\")
+                        |> range(start: 0)
+                        |> filter(fn: (r) => r["_measurement"] == "ConfigData" and r["Tag1"] == "Common" and r["Table"] == "EmailNotificationConfig")
+                        |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+                        |> filter(fn: (r) => r["shop_id"] == \"''' + shop_id + '''\")                                      
+                    '''
+            print(query)
+            data_frame = self.query_api.query_data_frame(query)
+            data_frame.drop(['result', 'table'], axis=1, inplace=True)
+            df = pd.DataFrame(data_frame)
+            # time = df.get("_time")
+            # time = df.loc[df['rule_id']==rule_id, '_time'].values[0]
+            temptime = df.loc[0, "_time"]
+            time = datetime.strftime(temptime, "%Y-%m-%dT%H:%M:%SZ")
+            # print(time)
+            # current_time = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+            delete_api= self.client.delete_api()
+            delete_api.delete(start = time, stop=time, predicate='_measurement = "ConfigData"',bucket=self.bucket, org=self.org)
+            return "Values deleted successfully"
+            
+        except Exception as ex:
+            print("\nFailed to update kpi config details from influx" + str(os.path.basename(__file__)) + str(ex))
+            self.LOG.ERROR(
+                "\nFailed to update kpi config details from influx" + str(os.path.basename(__file__)) + str(ex))
+            pass
+
+    def delete_whatsappconfig(self, data):
+        try:
+            self.points = []
+            shop_id = data["shop_id"]
+                
+            # Checking and Writing the range and color from WhatsappNotificationConfig
+            query = '''from(bucket: \"''' + self.bucket + '''\")
+                        |> range(start: 0)
+                        |> filter(fn: (r) => r["_measurement"] == "ConfigData" and r["Tag1"] == "Common" and r["Table"] == "WhatsappNotificationConfig")
+                        |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+                        |> filter(fn: (r) => r["shop_id"] == \"''' + shop_id + '''\")                                      
+                    '''
+            print(query)
+            data_frame = self.query_api.query_data_frame(query)
+            data_frame.drop(['result', 'table'], axis=1, inplace=True)
+            df = pd.DataFrame(data_frame)
+            # time = df.get("_time")
+            # time = df.loc[df['rule_id']==rule_id, '_time'].values[0]
+            temptime = df.loc[0, "_time"]
+            time = datetime.strftime(temptime, "%Y-%m-%dT%H:%M:%SZ")
+            # print(time)
+            # current_time = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+            delete_api= self.client.delete_api()
+            delete_api.delete(start = time, stop=time, predicate='_measurement = "ConfigData"',bucket=self.bucket, org=self.org)
+            return "Values deleted successfully"
+            
+        except Exception as ex:
+            print("\nFailed to update kpi config details from influx" + str(os.path.basename(__file__)) + str(ex))
+            self.LOG.ERROR(
+                "\nFailed to update kpi config details from influx" + str(os.path.basename(__file__)) + str(ex))
+            pass
