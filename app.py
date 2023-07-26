@@ -315,6 +315,28 @@ def post_assetmlconfig():
         print("Exception /emsadminapi/v1/post_assetmlconfig" + str(ex))
         LOG.ERROR("Exception /emsadminapi/v1/post_assetmlconfig: " + str(ex))
         return ex
+    
+@app.route('/emsadminapi/v1/post_shopmlconfig', methods=['POST'])
+def post_shopmlconfig():
+    try:
+        dict_data = request.get_json()
+        temp = json.dumps(dict_data)
+        data = json.loads(temp)
+        # cache_key = "post_shopmlconfig"
+        # cached_data = cache.get(cache_key)
+        # print(cache_key)
+        # if cached_data:
+        #     return jsonify(json.loads(cached_data)), 200
+       
+        output = dbService.post_shopmlconfig(data)
+        # cache.set(cache_key, json.dumps(output), ex=900)
+        print("Response /emsadminapi/v1/post_shopmlconfig ")
+        LOG.INFO("Response /emsadminapi/v1/post_shopmlconfig ")
+        return output, 200
+    except Exception as ex:
+        print("Exception /emsadminapi/v1/post_shopmlconfig" + str(ex))
+        LOG.ERROR("Exception /emsadminapi/v1/post_shopmlconfig: " + str(ex))
+        return ex
 
 @app.route('/emsadminapi/v1/post_shiftconfig', methods=['POST'])
 def post_shiftconfig():
@@ -477,6 +499,45 @@ def put_assetfaultruleconfig():
         LOG.ERROR("Exception /emsadminapi/v1/put_assetfaultruleconfig: " + str(ex))
         return ex
     
+@app.route('/emsadminapi/v1/put_assetmlconfig', methods=['PUT'])
+def put_assetmlconfig():
+    try:
+        dict_data = request.get_json()
+        temp = json.dumps(dict_data)
+        data = json.loads(temp)
+        # print(data)
+        # dict_data2 = request.get_json()
+        # temp = json.dumps(dict_data2)
+        # data2 = json.loads(temp)
+        output = dbService.put_assetmlconfig(data)
+        print("Response /emsadminapi/v1/put_assetmlconfig")
+        LOG.INFO("Response /emsadminapi/v1/put_assetmlconfig ")
+        return output, 200
+    except Exception as ex:
+        print("Exception /emsadminapi/v1/put_assetmlconfig" + str(ex))
+        LOG.ERROR("Exception /emsadminapi/v1/put_assetmlconfig: " + str(ex))
+        return ex
+    
+
+@app.route('/emsadminapi/v1/put_shopmlconfig', methods=['PUT'])
+def put_shopmlconfig():
+    try:
+        dict_data = request.get_json()
+        temp = json.dumps(dict_data)
+        data = json.loads(temp)
+        # print(data)
+        # dict_data2 = request.get_json()
+        # temp = json.dumps(dict_data2)
+        # data2 = json.loads(temp)
+        output = dbService.put_shopmlconfig(data)
+        print("Response /emsadminapi/v1/put_shopmlconfig")
+        LOG.INFO("Response /emsadminapi/v1/put_shopmlconfig ")
+        return output, 200
+    except Exception as ex:
+        print("Exception /emsadminapi/v1/put_shopmlconfig" + str(ex))
+        LOG.ERROR("Exception /emsadminapi/v1/put_shopmlconfig: " + str(ex))
+        return ex
+    
 @app.route('/emsadminapi/v1/put_shiftconfig', methods=['PUT'])
 def put_shiftconfig():
     try:
@@ -633,6 +694,46 @@ def delete_assetfaultruleconfig():
         LOG.ERROR("Exception /emsadminapi/v1/delete_assetfaultruleconfig: " + str(ex))
         return ex
     
+@app.route('/emsadminapi/v1/delete_assetmlconfig', methods=['DELETE'])
+def delete_assetmlconfig():
+    try:
+        dict_data = request.get_json()
+        temp = json.dumps(dict_data)
+        data = json.loads(temp)
+        print(data)
+        # dict_data2 = request.get_json()
+        # temp = json.dumps(dict_data2)
+        # data2 = json.loads(temp)
+        
+        output = dbService.delete_assetmlconfig(data)
+        print("Response /emsadminapi/v1/delete_assetmlconfig")
+        LOG.INFO("Response /emsadminapi/v1/delete_assetmlconfig ")
+        return output, 200
+    except Exception as ex:
+        print("Exception /emsadminapi/v1/delete_assetmlconfig" + str(ex))
+        LOG.ERROR("Exception /emsadminapi/v1/delete_assetmlconfig: " + str(ex))
+        return ex
+    
+@app.route('/emsadminapi/v1/delete_shopmlconfig', methods=['DELETE'])
+def delete_shopmlconfig():
+    try:
+        dict_data = request.get_json()
+        temp = json.dumps(dict_data)
+        data = json.loads(temp)
+        print(data)
+        # dict_data2 = request.get_json()
+        # temp = json.dumps(dict_data2)
+        # data2 = json.loads(temp)
+        
+        output = dbService.delete_shopmlconfig(data)
+        print("Response /emsadminapi/v1/delete_shopmlconfig")
+        LOG.INFO("Response /emsadminapi/v1/delete_shopmlconfig ")
+        return output, 200
+    except Exception as ex:
+        print("Exception /emsadminapi/v1/delete_shopmlconfig" + str(ex))
+        LOG.ERROR("Exception /emsadminapi/v1/delete_shopmlconfig: " + str(ex))
+        return ex
+
 @app.route('/emsadminapi/v1/delete_shiftconfig', methods=['DELETE'])
 def delete_shiftconfig():
     try:

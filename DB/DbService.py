@@ -886,7 +886,6 @@ class DbService:
                         |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
                         |> filter(fn: (r) => r["asset_name"] == \"''' + asset_name + '''\")                                        
                     '''
-            
             data_frame = self.query_api.query_data_frame(query)
             check = len(data_frame)
             print(check)
@@ -934,8 +933,6 @@ class DbService:
                     point = Point("ConfigData")
                     point.tag("Table", "AssetMLModelOp")
                     point.tag("Tag1", "Asset")
-                    # point.field("upper_limit", upper_limit)
-                    # point.field("lower_limit", lower_limit)
                     point.field("upper_limit", int(upper_limit))
                     point.field("lower_limit", int(lower_limit))
                     point.field("type", type)
@@ -1087,8 +1084,6 @@ class DbService:
                     point = Point("ConfigData")
                     point.tag("Table", "ShopMLModelOp")
                     point.tag("Tag1", "Shop")
-                    # point.field("upper_limit", upper_limit)
-                    # point.field("lower_limit", lower_limit)
                     point.field("upper_limit", int(upper_limit))
                     point.field("lower_limit", int(lower_limit))
                     point.field("type", type)
@@ -1620,6 +1615,242 @@ class DbService:
                 "\nFailed to update asset fault rule details from influx" + str(os.path.basename(__file__)) + str(ex))
             pass
 
+    def put_assetmlconfig(self, data):
+        try:
+            self.points = []
+            asset_id = data["asset_id"]
+            model = data["model"]
+
+            #If model is not present
+            if(model == "no"):
+                upper_limit = data["upper_limit"]
+                lower_limit = data["lower_limit"]
+                type = data["type"]
+
+                query = '''from(bucket: \"''' + self.bucket + '''\")
+                        |> range(start: 0)
+                        |> filter(fn: (r) => r["_measurement"] == "ConfigData")
+                        |> filter(fn: (r) => r["Table"] == "AssetMLModelOp")
+                        |> filter(fn: (r) => r["Tag1"] == "Asset")
+                        |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+                        |> filter(fn: (r) => r["asset_id"] == \"''' + asset_id + '''\")                                       
+                    '''
+                print(query)
+                data_frame = self.query_api.query_data_frame(query)
+                data_frame.drop(['result', 'table'], axis=1, inplace=True)
+                df = pd.DataFrame(data_frame)
+                # time = df.loc[df['rule_id']==rule_id, '_time'].values[0]
+                temptime = df.loc[0, "_time"]
+                time = datetime.strftime(temptime, "%Y-%m-%dT%H:%M:%SZ")
+
+                #Update asset_id, type, upper_limit and lower_limit in ML model Op
+                self.points =[]
+                point = Point("ConfigData")
+                point.tag("Table", "AssetMLModelOp")
+                point.tag("Tag1", "Asset")
+                point.field("upper_limit", int(upper_limit))
+                point.field("lower_limit", int(lower_limit))
+                point.field("type", type)
+                point.time(time)
+                self.points.append(point)
+                print(point)
+                # print(self.points)
+                self.write_api.write(bucket=self.bucket, org=self.org, record=self.points)
+                return "Values updated successfully"
+                
+            # If model is present
+            elif(model == "yes"):
+
+                #Updating ml_attributes and model_path from AssetMLModelConfig
+                model_path = data["model_path"]
+                type = data["type"]
+                std_dev = data["std_dev"]
+                mean = data["mean"]
+                ml_attributes = data["ml_attributes"]
+
+                query = '''from(bucket: \"''' + self.bucket + '''\")
+                        |> range(start: 0)
+                        |> filter(fn: (r) => r["_measurement"] == "ConfigData")
+                        |> filter(fn: (r) => r["Table"] == "AssetMLModelConfig")
+                        |> filter(fn: (r) => r["Tag1"] == "Asset")
+                        |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+                        |> filter(fn: (r) => r["asset_id"] == \"''' + asset_id + '''\")                                        
+                    '''
+                print(query)
+                data_frame = self.query_api.query_data_frame(query)
+                data_frame.drop(['result', 'table'], axis=1, inplace=True)
+                df = pd.DataFrame(data_frame)
+                # time = df.loc[df['rule_id']==rule_id, '_time'].values[0]
+                temptime = df.loc[0, "_time"]
+                time = datetime.strftime(temptime, "%Y-%m-%dT%H:%M:%SZ")
+
+                # Update model_path and model_attributes
+                self.points =[]
+                point = Point("ConfigData")
+                point.tag("Table", "AssetMLModelConfig")
+                point.tag("Tag1", "Asset")
+                point.field("ml_attributes", ml_attributes)
+                point.field("model_path", model_path)
+                point.time(time)
+                print(point)
+                self.points.append(point)
+                self.write_api.write(bucket=self.bucket, org=self.org, record=self.points)
+
+                #Update type, mean, std_dev from AssetMLModelOp
+                query = '''from(bucket: \"''' + self.bucket + '''\")
+                        |> range(start: 0)
+                        |> filter(fn: (r) => r["_measurement"] == "ConfigData")
+                        |> filter(fn: (r) => r["Table"] == "AssetMLModelOp")
+                        |> filter(fn: (r) => r["Tag1"] == "Asset")
+                        |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+                        |> filter(fn: (r) => r["asset_id"] == \"''' + asset_id + '''\")                                        
+                    '''
+                print(query)
+                data_frame = self.query_api.query_data_frame(query)
+                data_frame.drop(['result', 'table'], axis=1, inplace=True)
+                df = pd.DataFrame(data_frame)
+                # time = df.loc[df['rule_id']==rule_id, '_time'].values[0]
+                temptime = df.loc[0, "_time"]
+                time = datetime.strftime(temptime, "%Y-%m-%dT%H:%M:%SZ")
+                self.points =[]
+                point = Point("ConfigData")
+                point.tag("Table", "AssetMLModelOp")
+                point.tag("Tag1", "Asset")
+                point.field("type", type)
+                point.field("mean", float(mean))
+                point.field("std_dev", float(std_dev))
+                point.time(time)
+                print(point)
+                self.points.append(point)
+                self.write_api.write(bucket=self.bucket, org=self.org, record=self.points)
+                return "Values updated successfully"
+            else:
+                return "ERROR: Case Sensitive, Please write either yes or no only for model field."
+
+        except Exception as ex:
+                print("\nFailed to write asset ml config details from influx" + str(os.path.basename(__file__)) + str(ex))
+                self.LOG.ERROR(
+                "\nFailed to write asset ml config details from influx" + str(os.path.basename(__file__)) + str(ex))
+        pass
+
+    def put_shopmlconfig(self, data):
+        try:
+            self.points = []
+            shop_id = data["shop_id"]
+            model = data["model"]
+
+            #If model is not present
+            if(model == "no"):
+                upper_limit = data["upper_limit"]
+                lower_limit = data["lower_limit"]
+                type = data["type"]
+
+                query = '''from(bucket: \"''' + self.bucket + '''\")
+                        |> range(start: 0)
+                        |> filter(fn: (r) => r["_measurement"] == "ConfigData")
+                        |> filter(fn: (r) => r["Table"] == "ShopMLModelOp")
+                        |> filter(fn: (r) => r["Tag1"] == "Shop")
+                        |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+                        |> filter(fn: (r) => r["shop_id"] == \"''' + shop_id + '''\")                                       
+                    '''
+                print(query)
+                data_frame = self.query_api.query_data_frame(query)
+                data_frame.drop(['result', 'table'], axis=1, inplace=True)
+                df = pd.DataFrame(data_frame)
+                # time = df.loc[df['rule_id']==rule_id, '_time'].values[0]
+                temptime = df.loc[0, "_time"]
+                time = datetime.strftime(temptime, "%Y-%m-%dT%H:%M:%SZ")
+
+                #Update shop_id, type, upper_limit and lower_limit in ML model Op
+                self.points =[]
+                point = Point("ConfigData")
+                point.tag("Table", "ShopMLModelOp")
+                point.tag("Tag1", "Shop")
+                point.field("upper_limit", int(upper_limit))
+                point.field("lower_limit", int(lower_limit))
+                point.field("type", type)
+                point.time(time)
+                self.points.append(point)
+                print(point)
+                # print(self.points)
+                self.write_api.write(bucket=self.bucket, org=self.org, record=self.points)
+                return "Values updated successfully"
+                
+            # If model is present
+            elif(model == "yes"):
+
+                #Updating ml_attributes and model_path from ShopMLModelConfig
+                model_path = data["model_path"]
+                type = data["type"]
+                std_dev = data["std_dev"]
+                mean = data["mean"]
+                ml_attributes = data["ml_attributes"]
+
+                query = '''from(bucket: \"''' + self.bucket + '''\")
+                        |> range(start: 0)
+                        |> filter(fn: (r) => r["_measurement"] == "ConfigData")
+                        |> filter(fn: (r) => r["Table"] == "ShopMLModelConfig")
+                        |> filter(fn: (r) => r["Tag1"] == "Shop")
+                        |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+                        |> filter(fn: (r) => r["shop_id"] == \"''' + shop_id + '''\")                                        
+                    '''
+                print(query)
+                data_frame = self.query_api.query_data_frame(query)
+                data_frame.drop(['result', 'table'], axis=1, inplace=True)
+                df = pd.DataFrame(data_frame)
+                # time = df.loc[df['rule_id']==rule_id, '_time'].values[0]
+                temptime = df.loc[0, "_time"]
+                time = datetime.strftime(temptime, "%Y-%m-%dT%H:%M:%SZ")
+
+                # Update model_path and model_attributes
+                self.points =[]
+                point = Point("ConfigData")
+                point.tag("Table", "ShopMLModelConfig")
+                point.tag("Tag1", "Shop")
+                point.field("ml_attributes", ml_attributes)
+                point.field("model_path", model_path)
+                point.time(time)
+                print(point)
+                self.points.append(point)
+                self.write_api.write(bucket=self.bucket, org=self.org, record=self.points)
+
+                #Update type, mean, std_dev from ShopMLModelOp
+                query = '''from(bucket: \"''' + self.bucket + '''\")
+                        |> range(start: 0)
+                        |> filter(fn: (r) => r["_measurement"] == "ConfigData")
+                        |> filter(fn: (r) => r["Table"] == "ShopMLModelOp")
+                        |> filter(fn: (r) => r["Tag1"] == "Shop")
+                        |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+                        |> filter(fn: (r) => r["shop_id"] == \"''' + shop_id + '''\")                                        
+                    '''
+                print(query)
+                data_frame = self.query_api.query_data_frame(query)
+                data_frame.drop(['result', 'table'], axis=1, inplace=True)
+                df = pd.DataFrame(data_frame)
+                # time = df.loc[df['rule_id']==rule_id, '_time'].values[0]
+                temptime = df.loc[0, "_time"]
+                time = datetime.strftime(temptime, "%Y-%m-%dT%H:%M:%SZ")
+                self.points =[]
+                point = Point("ConfigData")
+                point.tag("Table", "ShopMLModelOp")
+                point.tag("Tag1", "Shop")
+                point.field("type", type)
+                point.field("mean", float(mean))
+                point.field("std_dev", float(std_dev))
+                point.time(time)
+                print(point)
+                self.points.append(point)
+                self.write_api.write(bucket=self.bucket, org=self.org, record=self.points)
+                return "Values updated successfully"
+            else:
+                return "ERROR: Case Sensitive, Please write either yes or no only for model field."
+
+        except Exception as ex:
+                print("\nFailed to write shop ml config details from influx" + str(os.path.basename(__file__)) + str(ex))
+                self.LOG.ERROR(
+                "\nFailed to write shop ml config details from influx" + str(os.path.basename(__file__)) + str(ex))
+        pass
+
     def put_shiftconfig(self, data):
         try:
             _from = data["from"]
@@ -1658,7 +1889,6 @@ class DbService:
                 "\nFailed to update kpi config details from influx" + str(os.path.basename(__file__)) + str(ex))
             pass
         
-
     def put_kpiconfig(self, data):
         try:
             self.points = []
@@ -2019,6 +2249,118 @@ class DbService:
             self.LOG.ERROR(
                 "\nFailed to delete asset fault rule details from influx" + str(os.path.basename(__file__)) + str(ex))
             pass
+
+    def delete_assetmlconfig(self, data):
+        try:
+            self.points = []
+            asset_id = data["asset_id"]
+            model = data["model"]
+
+            #If model is not present
+            if(model == "no"):
+
+                query = '''from(bucket: \"''' + self.bucket + '''\")
+                        |> range(start: 0)
+                        |> filter(fn: (r) => r["_measurement"] == "ConfigData")
+                        |> filter(fn: (r) => r["Table"] == "AssetMLModelConfig")
+                        |> filter(fn: (r) => r["Tag1"] == "Asset")
+                        |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+                        |> filter(fn: (r) => r["asset_id"] == \"''' + asset_id + '''\" )                                     
+                    '''
+            print(query)
+            data_frame = self.query_api.query_data_frame(query)
+            data_frame.drop(['result', 'table'], axis=1, inplace=True)
+            df = pd.DataFrame(data_frame)
+            # time = df.get("_time")
+            temptime = df.loc[0, "_time"]
+            time = datetime.strftime(temptime, "%Y-%m-%dT%H:%M:%SZ")
+            # time = df.loc[0, "_time"]
+            # print(time)
+            delete_api= self.client.delete_api()
+            delete_api.delete(start = time, stop=time, predicate='_measurement = "ConfigData"',bucket=self.bucket, org=self.org)
+
+            #Delete asset_id, type, upper_limit and lower_limit in ML model Op
+            query = '''from(bucket: \"''' + self.bucket + '''\")
+                        |> range(start: 0)
+                        |> filter(fn: (r) => r["_measurement"] == "ConfigData")
+                        |> filter(fn: (r) => r["Table"] == "AssetMLModelOp")
+                        |> filter(fn: (r) => r["Tag1"] == "Asset")
+                        |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+                        |> filter(fn: (r) => r["asset_id"] == \"''' + asset_id + '''\" )                                     
+                    '''
+            print(query)
+            data_frame = self.query_api.query_data_frame(query)
+            data_frame.drop(['result', 'table'], axis=1, inplace=True)
+            df = pd.DataFrame(data_frame)
+            # time = df.get("_time")
+            temptime = df.loc[0, "_time"]
+            time = datetime.strftime(temptime, "%Y-%m-%dT%H:%M:%SZ")
+            # time = df.loc[0, "_time"]
+            # print(time)
+            delete_api= self.client.delete_api()
+            delete_api.delete(start = time, stop=time, predicate='_measurement = "ConfigData"',bucket=self.bucket, org=self.org)
+
+        except Exception as ex:
+                print("\nFailed to write asset ml config details from influx" + str(os.path.basename(__file__)) + str(ex))
+                self.LOG.ERROR(
+                "\nFailed to write asset ml config details from influx" + str(os.path.basename(__file__)) + str(ex))
+        pass
+
+    def delete_shopmlconfig(self, data):
+        try:
+            self.points = []
+            shop_id = data["shop_id"]
+            model = data["model"]
+
+            #If model is not present
+            if(model == "no"):
+
+                query = '''from(bucket: \"''' + self.bucket + '''\")
+                        |> range(start: 0)
+                        |> filter(fn: (r) => r["_measurement"] == "ConfigData")
+                        |> filter(fn: (r) => r["Table"] == "ShopMLModelConfig")
+                        |> filter(fn: (r) => r["Tag1"] == "Shop")
+                        |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+                        |> filter(fn: (r) => r["shop_id"] == \"''' + shop_id + '''\" )                                     
+                    '''
+            print(query)
+            data_frame = self.query_api.query_data_frame(query)
+            data_frame.drop(['result', 'table'], axis=1, inplace=True)
+            df = pd.DataFrame(data_frame)
+            # time = df.get("_time")
+            temptime = df.loc[0, "_time"]
+            time = datetime.strftime(temptime, "%Y-%m-%dT%H:%M:%SZ")
+            # time = df.loc[0, "_time"]
+            # print(time)
+            delete_api= self.client.delete_api()
+            delete_api.delete(start = time, stop=time, predicate='_measurement = "ConfigData"',bucket=self.bucket, org=self.org)
+
+            #Delete shop_id, type, upper_limit and lower_limit in ML model Op
+            query = '''from(bucket: \"''' + self.bucket + '''\")
+                        |> range(start: 0)
+                        |> filter(fn: (r) => r["_measurement"] == "ConfigData")
+                        |> filter(fn: (r) => r["Table"] == "ShopMLModelOp")
+                        |> filter(fn: (r) => r["Tag1"] == "Shop")
+                        |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+                        |> filter(fn: (r) => r["shop_id"] == \"''' + shop_id + '''\" )                                     
+                    '''
+            print(query)
+            data_frame = self.query_api.query_data_frame(query)
+            data_frame.drop(['result', 'table'], axis=1, inplace=True)
+            df = pd.DataFrame(data_frame)
+            # time = df.get("_time")
+            temptime = df.loc[0, "_time"]
+            time = datetime.strftime(temptime, "%Y-%m-%dT%H:%M:%SZ")
+            # time = df.loc[0, "_time"]
+            # print(time)
+            delete_api= self.client.delete_api()
+            delete_api.delete(start = time, stop=time, predicate='_measurement = "ConfigData"',bucket=self.bucket, org=self.org)
+
+        except Exception as ex:
+            print("\nFailed to write shop ml config details from influx" + str(os.path.basename(__file__)) + str(ex))
+            self.LOG.ERROR(
+            "\nFailed to write shop ml config details from influx" + str(os.path.basename(__file__)) + str(ex))
+        pass
 
     def delete_shiftconfig(self, data):
         try:
