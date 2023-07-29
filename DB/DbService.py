@@ -386,7 +386,7 @@ class DbService:
             pass
 
     
-    def get_shifconfig(self):
+    def get_shiftconfig(self):
         try:
             query = '''
                         from(bucket: \"''' + self.bucket + '''\")
@@ -634,7 +634,7 @@ class DbService:
                 print(point)
                 self.points.append(point)
             
-                self.write_api.write(bucket=self.bucket, org=self.org, record= self.points)
+                self.write_api.write(bucket=self.bucket, org=self.org, record=self.points)
                 return "Insertion successful"
             else:
                 return "You are trying to add duplicate values."
@@ -1475,18 +1475,23 @@ class DbService:
                         |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
                         |> filter(fn: (r) => r["asset_id"] == \"''' + asset_id + '''\")
                         '''
-            
+            print(query)
             data_frame = self.query_api.query_data_frame(query)
             data_frame.drop(['result', 'table'], axis=1, inplace=True)
             df = pd.DataFrame(data_frame)
             # time = df.loc[df['asset_id']==asset_id, '_time'].values[0]
             time = df.loc[0, "_time"]
+            # filtered_df = df[df["asset_id"] == asset_id]
+            # temptime = filtered_df["_time"].values[0]
             # time = datetime.strftime(temptime, "%Y-%m-%dT%H:%M:%SZ")
-            # print(time)
+            print(time)
             point = Point("ConfigData")
             point.tag("Table", "AssetConfig")
             point.tag("Tag1", "Asset")
             point.field("asset_name", asset_name)
+            point.field("asset_id", asset_id)
+            point.field("shop_id", shop_id)
+            point.field("synced", int(0))
             point.time(time)
             print(point)    
             self.write_api.write(bucket=self.bucket, org=self.org, record= point)
@@ -1514,10 +1519,11 @@ class DbService:
             point.tag("Table", "ShopConfig")
             point.tag("Tag1", "Shop")
             point.field("shop_name", shop_name)
+            point.field("factory_id", factory_id)
+            point.field("shop_id", shop_id)
+            point.field("synced", int(0))
             point.time(time)
             print(point)
-            # self.points.append(point)    
-            # points.append(point)
             self.write_api.write(bucket=self.bucket, org=self.org, record= point)
             print("Shop value updated")
 
@@ -1543,6 +1549,9 @@ class DbService:
             point.tag("Table", "FactoryConfig")
             point.tag("Tag1", "Factory")
             point.field("factory_name", factory_name)
+            point.field("factory_id", factory_id)
+            point.field("org_id", org_id)
+            point.field("synced", int(0))
             point.time(time)
             print(point)
             self.write_api.write(bucket=self.bucket, org=self.org, record= point)  
@@ -1570,6 +1579,8 @@ class DbService:
             point.tag("Table", "OrgConfig")
             point.tag("Tag1", "Org")
             point.field("org_name", org_name)
+            point.field("org_id", org_id)
+            point.field("synced", int(0))
             point.time(time)
             print(point)    
             # points.append(point)
@@ -1609,8 +1620,10 @@ class DbService:
             point.tag("Table", "AssetAttributes")
             point.tag("Tag1", "Asset")
             point.field("attribute_name", attribute_name)
+            point.field("assetattribute_id", assetattribute_id)
+            point.field("synced", int(0))
             point.time(time)
-            # print(point)
+            print(point)
             # points.append(point)
             self.write_api.write(bucket=self.bucket, org=self.org, record= point)
             return "Values updated successfully"
@@ -1625,6 +1638,7 @@ class DbService:
         try:
             # shop_name = data["shop_name"]
             # shop_id = data["shop_id"]
+
             attribute_name = data["attribute_name"]
             shopattribute_id = data["shopattribute_id"]
 
@@ -1651,6 +1665,8 @@ class DbService:
             point.tag("Table", "ShopAttributes")
             point.tag("Tag1", "Shop")
             point.field("attribute_name", attribute_name)
+            point.field("shopattribute_id", shopattribute_id)
+            point.field("synced", int(0))
             point.time(time)
             # print(point)
             # points.append(point)
@@ -1689,11 +1705,15 @@ class DbService:
             # time = datetime.strftime(temptime, "%Y-%m-%dT%H:%M:%SZ")
             # print(time)
             point = Point("ConfigData")
-            point.tag("Table", "AssetFaultRuleConfig")
+            point.tag("Table", "AssetAlertRules")
             point.tag("Tag1", "Asset")
             point.field("condition", condition)
             point.field("alert", alert)
             point.field("action", action)
+            point.field("rule_id", rule_id)
+            point.field("consecutive", "false")
+            point.field("delay", int(0))
+            point.field("synced", int(0))
             point.time(time)
             # print(point)
             # points.append(point)
@@ -1740,8 +1760,13 @@ class DbService:
                 point.field("upper_limit", int(upper_limit))
                 point.field("lower_limit", int(lower_limit))
                 point.field("type", type)
+                point.field("asset_id", asset_id)
+                point.field("mean", float(0))
+                # point.field("range_end", int(0))
+                # point.field("range_start", int(0))
+                point.field("std_dev", float(0))
+                point.field("synced", int(0))
                 point.time(time)
-                # self.points.append(point)
                 print(point)
                 # print(self.points)
                 self.write_api.write(bucket=self.bucket, org=self.org, record= point)
@@ -1774,13 +1799,18 @@ class DbService:
 
                 # Update model_path and model_attributes
                 point = Point("ConfigData")
+                point.measurement("ConfigData")
                 point.tag("Table", "AssetMLModelConfig")
                 point.tag("Tag1", "Asset")
                 point.field("ml_attributes", ml_attributes)
                 point.field("model_path", model_path)
+                point.field("model", "yes")
+                point.field("multiplier", "[1,2,3]")
+                point.field("pickle_path", model_path)
+                point.field("asset_id", asset_id)
+                point.field("synced", int(0))
                 point.time(time)
                 print(point)
-                # self.points.append(point)
                 self.write_api.write(bucket=self.bucket, org=self.org, record= point)
 
                 #Update type, mean, std_dev from AssetMLModelOp
@@ -1800,14 +1830,20 @@ class DbService:
                 time = df.loc[0, "_time"]
                 # time = datetime.strftime(temptime, "%Y-%m-%dT%H:%M:%SZ")
                 point = Point("ConfigData")
+                point.measurement("ConfigData")
                 point.tag("Table", "AssetMLModelOp")
                 point.tag("Tag1", "Asset")
+                point.field("upper_limit", int(0))
+                point.field("lower_limit", int(0))
                 point.field("type", type)
                 point.field("mean", float(mean))
+                point.field("asset_id", asset_id)
+                point.field("range_end", int(0))
+                point.field("range_start", int(0))
                 point.field("std_dev", float(std_dev))
+                point.field("synced", int(0))
                 point.time(time)
                 print(point)
-                self.points.append(point)
                 self.write_api.write(bucket=self.bucket, org=self.org, record=point)
                 return "Values updated successfully"
             else:
@@ -1821,7 +1857,6 @@ class DbService:
 
     def put_shopmlconfig(self, data):
         try:
-            self.points = []
             shop_id = data["shop_id"]
             model = data["model"]
 
@@ -1854,10 +1889,16 @@ class DbService:
                 point.field("upper_limit", int(upper_limit))
                 point.field("lower_limit", int(lower_limit))
                 point.field("type", type)
+                point.field("shop_id", shop_id)
+                point.field("mean", float(0))
+                # point.field("range_end", int(0))
+                # point.field("range_start", int(0))
+                point.field("std_dev", float(0))
+                point.field("synced", int(0))
                 point.time(time)
                 print(point)
                 # print(self.points)
-                self.write_api.write(bucket=self.bucket, org=self.org, record=point)
+                self.write_api.write(bucket=self.bucket, org=self.org, record= point)
                 return "Values updated successfully"
                 
             # If model is present
@@ -1887,14 +1928,19 @@ class DbService:
 
                 # Update model_path and model_attributes
                 point = Point("ConfigData")
+                point.measurement("ConfigData")
                 point.tag("Table", "ShopMLModelConfig")
                 point.tag("Tag1", "Shop")
                 point.field("ml_attributes", ml_attributes)
                 point.field("model_path", model_path)
+                point.field("model", "yes")
+                point.field("multiplier", "[1,2,3]")
+                point.field("pickle_path", model_path)
+                point.field("shop_id", shop_id)
+                point.field("synced", int(0))
                 point.time(time)
                 print(point)
                 self.write_api.write(bucket=self.bucket, org=self.org, record= point)
-                # self.points.append(point)
 
                 #Update type, mean, std_dev from ShopMLModelOp
                 query = '''from(bucket: \"''' + self.bucket + '''\")
@@ -1910,18 +1956,24 @@ class DbService:
                 data_frame.drop(['result', 'table'], axis=1, inplace=True)
                 df = pd.DataFrame(data_frame)
                 # time = df.loc[df['rule_id']==rule_id, '_time'].values[0]
-                temptime = df.loc[0, "_time"]
-                time = datetime.strftime(temptime, "%Y-%m-%dT%H:%M:%SZ")
+                time = df.loc[0, "_time"]
+                # time = datetime.strftime(temptime, "%Y-%m-%dT%H:%M:%SZ")
                 point = Point("ConfigData")
+                point.measurement("ConfigData")
                 point.tag("Table", "ShopMLModelOp")
                 point.tag("Tag1", "Shop")
+                point.field("upper_limit", int(0))
+                point.field("lower_limit", int(0))
                 point.field("type", type)
                 point.field("mean", float(mean))
+                point.field("shop_id", shop_id)
+                point.field("range_end", int(0))
+                point.field("range_start", int(0))
                 point.field("std_dev", float(std_dev))
+                point.field("synced", int(0))
                 point.time(time)
                 print(point)
-                # self.points.append(point)
-                self.write_api.write(bucket=self.bucket, org=self.org, record= point)
+                self.write_api.write(bucket=self.bucket, org=self.org, record=point)
                 return "Values updated successfully"
             else:
                 return "ERROR: Case Sensitive, Please write either yes or no only for model field."
@@ -1934,6 +1986,8 @@ class DbService:
 
     def put_shiftconfig(self, data):
         try:
+            shift_schedule = data["shift_schedule"]
+            shift_title = data["shift_title"]
             _from = data["from"]
             _to = data["to"]
             shift_id = data["shift_id"]
@@ -1952,15 +2006,16 @@ class DbService:
             # time = df.loc[df['shift_id']==shift_id, '_time'].values[0]
             time = df.loc[0, "_time"]
             # time = datetime.strftime(temptime, "%Y-%m-%dT%H:%M:%SZ")
-            self.points=[]
             point = Point("ConfigData")
             point.tag("Table", "ShiftConfig")
             point.tag("Tag1", "Common")
+            point.field("shift_schedule", int(shift_schedule))
+            point.field("shift_title", shift_title)
+            point.field("shift_id", shift_id)
             point.field("from", int(_from))
             point.field("to", int(_to))
             point.field("synced", int(0))
             point.time(time)
-            # self.points.append(point)    
             self.write_api.write(bucket=self.bucket, org=self.org, record=point)
             return "Values updated successful."
         
@@ -1972,7 +2027,6 @@ class DbService:
         
     def put_kpiconfig(self, data):
         try:
-            self.points = []
             id = data["id"]
             range = data["range"]
             color = data["color"]
@@ -1994,10 +2048,10 @@ class DbService:
             point = Point("ConfigData")
             point.tag("Table", "KPIColorConfig")
             point.tag("Tag1", "Common")
-            point.time(time)
             point.field("range", range)
-            point.field("color", color)  
-            self.points.append(point)    
+            point.field("color", color)
+            point.field("id", id)
+            point.field("synced", int(0))   
             self.write_api.write(bucket=self.bucket, org=self.org, record= point)
             return "Values updated successful."
             
@@ -2015,6 +2069,12 @@ class DbService:
             priority = data["priority"]
             shop_id = data["shop_id"]
                 
+            if(enable=="Enable"):
+                value = "yes"
+            elif(enable=="Disable"):
+                value = "no"
+            else:
+                return "You can only write either Enable or Disable"
             # Checking and Writing the range and color from EmailNotificationConfig
             query = '''from(bucket: \"''' + self.bucket + '''\")
                         |> range(start: 0)
@@ -2033,11 +2093,11 @@ class DbService:
             point = Point("ConfigData")
             point.tag("Table", "EmailNotificationConfig")
             point.tag("Tag1", "Common")
-            point.time(time)
-            point.field("email_id", email_id) 
-            point.field("enable", enable) 
+            point.field("email_id", email_id)
+            point.field("enable", value)
             point.field("priority", priority)
-            self.points.append(point)    
+            point.field("shop_id", shop_id)
+            point.field("synced", int(0))
             self.write_api.write(bucket=self.bucket, org=self.org, record= point)
             return "Values updated successful."
             
@@ -2049,12 +2109,18 @@ class DbService:
 
     def put_whatsappconfig(self, data):
         try:
-            self.points = []
             enable = data["enable"]
             whatsapp_id = data["whatsapp_id"]
             priority = data["priority"]
             shop_id = data["shop_id"]
-                
+            
+            if(enable=="Enable"):
+                value = "yes"
+            elif(enable=="Disable"):
+                value = "no"
+            else:
+                return "You can only write either Enable or Disable"
+            
             # Checking and Writing the range and color from WhatsappNotificationConfig
             query = '''from(bucket: \"''' + self.bucket + '''\")
                         |> range(start: 0)
@@ -2073,11 +2139,12 @@ class DbService:
             point = Point("ConfigData")
             point.tag("Table", "WhatsappNotificationConfig")
             point.tag("Tag1", "Common")
-            point.time(time)
-            point.field("whatsapp_id", whatsapp_id) 
-            point.field("enable", enable) 
+            point.field("whatsapp_id", whatsapp_id)
+            point.field("enable", value)
             point.field("priority", priority)
-            self.points.append(point)    
+            point.field("shop_id", shop_id)
+            point.field("synced", int(0))
+            point.time(time)
             self.write_api.write(bucket=self.bucket, org=self.org, record= point)
             return "Values updated successful."
             
@@ -2191,7 +2258,7 @@ class DbService:
     def delete_assetattributes(self, data):
         try:
             asset_id = data["asset_id"]
-            attribute_id = data["attribute_id"]
+            assetattribute_id = data["assetattribute_id"]
 
             # Deleting the asset name from AssetConfig
             query = '''from(bucket: \"''' + self.bucket + '''\")
@@ -2222,7 +2289,7 @@ class DbService:
                         |> filter(fn: (r) => r["Table"] == "AssetAttributes")
                         |> filter(fn: (r) => r["Tag1"] == "Asset")
                         |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
-                        |> filter(fn: (r) => r["attribute_id"] == \"''' + attribute_id + '''\")
+                        |> filter(fn: (r) => r["assetattribute_id"] == \"''' + assetattribute_id + '''\")
                         '''
             
             data_frame = self.query_api.query_data_frame(query)
@@ -2236,7 +2303,7 @@ class DbService:
             # current_time = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
             delete_api= self.client.delete_api()
             delete_api.delete(start = time, stop=time, predicate='_measurement = "ConfigData"',bucket=self.bucket, org=self.org)
-        
+            return "Values deleted successfully"
         except Exception as ex:
             print("\nFailed to delete asset attributes details from influx" + str(os.path.basename(__file__)) + str(ex))
             self.LOG.ERROR(
